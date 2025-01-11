@@ -608,6 +608,60 @@
                     }
                 }
 
+                // Função para formatar data e hora
+                function formatDateTime(datetime) {
+                    try {
+                        if (!datetime) return '-'
+                        const date = new Date(datetime)
+                        return date.toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    } catch (error) {
+                        console.error('Erro ao formatar data:', error)
+                        return datetime
+                    }
+                }
+
+                // Verifica se o servidor está disponível
+                async function checkServerAvailability() {
+                    try {
+                        const response = await fetch('/')
+                        return response.ok
+                    } catch (error) {
+                        console.error('Erro ao verificar servidor:', error)
+                        return false
+                    }
+                }
+
+                // Tenta carregar os dados com retry
+                async function loadDataWithRetry(retries = 3, delay = 2000) {
+                    for (let i = 0; i < retries; i++) {
+                        try {
+                            const isAvailable = await checkServerAvailability()
+                            if (!isAvailable) {
+                                console.log(`Servidor indisponível, tentativa ${i + 1} de ${retries}`)
+                                showNotification('Tentando conectar ao servidor...', 'error')
+                                await new Promise(resolve => setTimeout(resolve, delay))
+                                continue
+                            }
+                            
+                            await loadData()
+                            return true
+                        } catch (error) {
+                            console.error(`Erro na tentativa ${i + 1}:`, error)
+                            if (i === retries - 1) {
+                                showNotification('Não foi possível conectar ao servidor', 'error')
+                            }
+                            await new Promise(resolve => setTimeout(resolve, delay))
+                        }
+                    }
+                    return false
+                }
+
                 // Carrega a lista de templates e listas de email
                 async function loadData() {
                     try {
@@ -616,27 +670,44 @@
                         
                         // Carrega templates
                         console.log('Carregando templates...')
-                        const templatesResponse = await fetch('/list_templates')
-                        templates.value = await templatesResponse.json()
-                        console.log('Templates carregados:', templates.value)
+                        try {
+                            const templatesResponse = await fetch('/list_templates')
+                            if (!templatesResponse.ok) throw new Error(`HTTP error! status: ${templatesResponse.status}`)
+                            templates.value = await templatesResponse.json()
+                            console.log('Templates carregados:', templates.value)
+                        } catch (error) {
+                            console.error('Erro ao carregar templates:', error)
+                            showNotification('Erro ao carregar templates', 'error')
+                        }
 
                         // Carrega listas de email
                         console.log('Carregando listas de email...')
-                        const listsResponse = await fetch('/api/lists')
-                        const listsData = await listsResponse.json()
-                        if (listsData.status === 'success') {
-                            lists.value = listsData.data
-                            console.log('Listas carregadas:', lists.value)
-                        } else {
-                            console.error('Erro ao carregar listas:', listsData.message)
+                        try {
+                            const listsResponse = await fetch('/api/lists')
+                            if (!listsResponse.ok) throw new Error(`HTTP error! status: ${listsResponse.status}`)
+                            const listsData = await listsResponse.json()
+                            if (listsData.status === 'success') {
+                                lists.value = listsData.data
+                                console.log('Listas carregadas:', lists.value)
+                            } else {
+                                throw new Error(listsData.message || 'Erro ao carregar listas')
+                            }
+                        } catch (error) {
+                            console.error('Erro ao carregar listas:', error)
                             showNotification('Erro ao carregar listas de email', 'error')
                         }
 
                         // Carrega agendamentos
                         console.log('Carregando agendamentos...')
-                        const schedulesResponse = await fetch('/schedules')
-                        schedules.value = await schedulesResponse.json()
-                        console.log('Agendamentos carregados:', schedules.value)
+                        try {
+                            const schedulesResponse = await fetch('/schedules')
+                            if (!schedulesResponse.ok) throw new Error(`HTTP error! status: ${schedulesResponse.status}`)
+                            schedules.value = await schedulesResponse.json()
+                            console.log('Agendamentos carregados:', schedules.value)
+                        } catch (error) {
+                            console.error('Erro ao carregar agendamentos:', error)
+                            showNotification('Erro ao carregar agendamentos', 'error')
+                        }
 
                     } catch (error) {
                         console.error('Erro ao carregar dados:', error)
@@ -647,10 +718,13 @@
                     }
                 }
 
-                // Carrega os dados iniciais
-                loadData()
-                // Atualiza os dados a cada 30 segundos
-                setInterval(loadData, 30000)
+                // Inicializa os dados
+                loadDataWithRetry()
+                
+                // Atualiza os dados periodicamente
+                setInterval(() => {
+                    loadDataWithRetry(2, 1000)  // Menos tentativas para atualizações periódicas
+                }, 30000)
 
                 // Envia ou agenda email de teste
                 async function sendTestEmail() {
@@ -817,7 +891,8 @@
                     cancelSchedule,
                     getStatusBadgeClass,
                     getStatusText,
-                    loadPreview
+                    loadPreview,
+                    formatDateTime
                 }
             }
         }).mount('#app')

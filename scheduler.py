@@ -204,68 +204,55 @@ class EmailScheduler:
     
     def _process_schedule(self, schedule):
         try:
+            print(f"\n=== Processando agendamento ===")
+            print(f"Tipo: {schedule['type']}")
+            print(f"Template: {schedule['template']}")
+            
             if schedule['type'] == 'test':
                 # Processa email de teste
-                result = self.dispatcher.enviar_email(
-                    schedule['email'],
-                    schedule['name'],
-                    schedule['subject'],
-                    schedule['template'],
-                    schedule['preview']
+                print("Enviando email de teste...")
+                result = self.dispatcher.enviar_emails(
+                    lista_emails_path='teste_email.csv',
+                    template_path=os.path.join('templates', schedule['template']),
+                    horario_envio=schedule['datetime'],
+                    assunto=schedule['subject'],
+                    remetente='Blazee <contato@useblazee.com.br>'
                 )
                 return result
             elif schedule['type'] == 'mass':
+                print(f"Processando envio em massa...")
+                print(f"Lista: {schedule['list_path']}")
+                
                 # Processa lista de emails em massa
-                df = pd.read_csv(schedule['list_path'])
-                
-                # Processa em lotes
-                batch_size = 250
-                total_enviados = 0
-                total_falhas = 0
-                
-                for i in range(0, len(df), batch_size):
-                    batch = df.iloc[i:i+batch_size]
+                try:
+                    result = self.dispatcher.enviar_emails(
+                        lista_emails_path=schedule['list_path'],
+                        template_path=os.path.join('templates', schedule['template']),
+                        horario_envio=schedule['datetime'],
+                        assunto=schedule['subject'],
+                        remetente='Blazee <contato@useblazee.com.br>'
+                    )
                     
-                    # Verifica uso de memória antes de processar o lote
-                    if psutil.virtual_memory().percent > 75:
-                        print("Uso de memória alto, aguardando...")
-                        time.sleep(10)
+                    if result:
+                        schedule['status'] = 'concluido'
+                        print("Envio em massa concluído com sucesso")
+                    else:
+                        schedule['status'] = 'erro'
+                        schedule['error'] = 'Falha ao enviar emails'
+                        print("Erro no envio em massa")
                     
-                    # Processa cada email do lote
-                    for _, row in batch.iterrows():
-                        try:
-                            result = self.dispatcher.enviar_email(
-                                row['EMAIL'],
-                                row.get('NOME', ''),
-                                schedule['subject'],
-                                schedule['template'],
-                                schedule['preview']
-                            )
-                            
-                            if result['success']:
-                                total_enviados += 1
-                            else:
-                                total_falhas += 1
-                            
-                            # Pausa entre emails
-                            time.sleep(0.05)  # 50ms entre emails
-                            
-                        except Exception as e:
-                            print(f"Erro ao enviar email para {row['EMAIL']}: {e}")
-                            total_falhas += 1
-                    
-                    # Pausa entre lotes
-                    time.sleep(10)
+                except Exception as e:
+                    print(f"Erro ao processar envio em massa: {str(e)}")
+                    schedule['status'] = 'erro'
+                    schedule['error'] = str(e)
                 
-                return {
-                    'success': True,
-                    'total_enviados': total_enviados,
-                    'total_falhas': total_falhas
-                }
+                return result
                 
         except Exception as e:
-            print(f"Erro ao processar agendamento: {e}")
-            return {'success': False, 'error': str(e)}
+            print(f"Erro ao processar agendamento: {str(e)}")
+            schedule['status'] = 'erro'
+            schedule['error'] = str(e)
+            return False
     
     def __del__(self):
         """Tenta fechar a conexão com o banco de dados ao destruir o objeto"""

@@ -247,94 +247,53 @@ class EmailDispatcher:
             df = df[~df['EMAIL'].isin([e['email'] for e in emails_invalidos])]
             
             # Carrega o template
-            with open(template_path, 'r', encoding='utf-8') as f:
-                template_html = f.read()
+            template = self.carregar_template(template_path)
             
-            # Converte o horário para datetime
-            horario = datetime.strptime(horario_envio, '%Y-%m-%d %H:%M:%S')
-            horario = self.timezone.localize(horario)
-            
-            # Se o horário já passou, envia imediatamente
-            agora = datetime.now(self.timezone)
-            if horario < agora:
-                horario = agora
-            
-            # Atualiza status
-            self.stats['status'] = 'aguardando'
-            self.salvar_estatisticas()
-            
-            # Aguarda até o horário de envio
-            if horario > agora:
-                self.logger.info(f"Aguardando horário de envio: {horario}")
-                time.sleep((horario - agora).total_seconds())
-            
-            # Atualiza status
-            self.stats['status'] = 'enviando'
-            self.salvar_estatisticas()
-            
-            # Lista para armazenar falhas
-            falhas = []
-            
-            # Envia os emails em lotes
-            for i in range(0, len(df), self.batch_size):
-                lote = df[i:i + self.batch_size]
+            # Conecta ao servidor SMTP
+            with smtplib.SMTP(host=self.smtp_config['host'], 
+                            port=self.smtp_config['port'], 
+                            timeout=self.smtp_config['timeout']) as server:
                 
-                for _, row in lote.iterrows():
-                    try:
-                        # Prepara o email personalizado
-                        email_html = template_html.replace('{NOME}', row['NOME'])
-                        email_html = email_html.replace('{EMAIL}', row['EMAIL'])
-                        email_html = email_html.replace('{DATA_HORA}', horario.strftime('%d/%m/%Y %H:%M:%S'))
-                        
-                        # Configura o email
-                        msg = self.preparar_email(row['EMAIL'], row['NOME'], assunto, email_html, remetente)
-                        
-                        # Envia o email
-                        with smtplib.SMTP('localhost') as server:
-                            server.send_message(msg)
-                            self.logger.info(f"Email enviado para {row['EMAIL']}")
-                            self.atualizar_estatisticas('enviado')
-                        
-                        # Aguarda um pouco entre os envios
-                        time.sleep(1 / self.rate_limit)
+                self.stats['status'] = 'enviando'
+                self.salvar_estatisticas()
+                
+                # Processa em lotes
+                for i in range(0, len(df), self.batch_size):
+                    batch = df.iloc[i:i+self.batch_size]
                     
-                    except Exception as e:
-                        erro = {
-                            'email': row['EMAIL'],
-                            'erro': str(e),
-                            'timestamp': datetime.now().isoformat()
-                        }
-                        falhas.append(erro)
-                        self.atualizar_estatisticas('falha', erro)
-                        self.logger.error(f"Erro ao enviar email para {row['EMAIL']}: {str(e)}")
-                        continue
-                
-                # Pausa entre lotes
-                if i + self.batch_size < len(df):
-                    self.logger.info(f"Pausa entre lotes: {self.batch_interval} segundos")
+                    for _, row in batch.iterrows():
+                        try:
+                            msg = self.preparar_email(
+                                destinatario=row['EMAIL'],
+                                nome=row.get('NOME', ''),
+                                assunto=assunto,
+                                template=template,
+                                remetente=remetente
+                            )
+                            
+                            self.enviar_email_com_retry(server, msg, row['EMAIL'])
+                            self.atualizar_estatisticas('enviado')
+                            
+                        except Exception as e:
+                            erro = f"Erro ao enviar email para {row['EMAIL']}: {str(e)}"
+                            print(erro)
+                            self.atualizar_estatisticas('falha', erro)
+                    
+                    # Pausa entre lotes
                     time.sleep(self.batch_interval)
-            
-            # Salva relatório de falhas
-            if falhas or emails_invalidos:
-                relatorio = {
-                    'falhas': falhas,
-                    'invalidos': emails_invalidos,
-                    'timestamp': datetime.now().isoformat()
-                }
-                with open('relatorio_falhas.json', 'w') as f:
-                    json.dump(relatorio, f, indent=2)
-            
-            # Atualiza status final
-            self.stats['status'] = 'concluido'
-            self.stats['fim'] = datetime.now().isoformat()
-            self.salvar_estatisticas()
-            
-            return True
-        
+                
+                self.stats['status'] = 'concluido'
+                self.stats['fim'] = datetime.now().isoformat()
+                self.salvar_estatisticas()
+                
+                return True
+                
         except Exception as e:
-            self.logger.error(f"Erro ao enviar emails: {str(e)}")
+            erro = f"Erro crítico no envio em massa: {str(e)}"
+            print(erro)
             self.stats['status'] = 'erro'
             self.stats['fim'] = datetime.now().isoformat()
+            self.atualizar_estatisticas('falha', erro)
             self.salvar_estatisticas()
             return False
 
