@@ -9,29 +9,36 @@ import pandas as pd
 from pathlib import Path
 
 class WebHandler(SimpleHTTPRequestHandler):
-    # Armazena os agendamentos em memória
+    # Atributos de classe
     schedules = []
+    lists_dir = Path('lists')
+    _lists_cache = {}
+    _last_cache_update = 0
+    cache_ttl = 30  # tempo em segundos
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dispatcher = EmailDispatcher()
         self.scheduler = EmailScheduler(self.schedules)
-        self.lists_dir = Path('lists')
+        
+        # Garante que o diretório lists existe
         self.lists_dir.mkdir(exist_ok=True)
-        self._lists_cache = {}
-        self._last_cache_update = 0
-        self.cache_ttl = 30  # tempo em segundos
 
     @classmethod
     def init_scheduler(cls):
         """Inicializa o scheduler de emails"""
         cls.scheduler = EmailScheduler(cls.schedules)
         cls.scheduler.start()
+        
+        # Garante que o diretório lists existe
+        cls.lists_dir.mkdir(exist_ok=True)
+        print(f"Diretório de listas inicializado em: {cls.lists_dir.absolute()}")
     
     def do_GET(self):
         try:
             if self.path == '/api/lists':
                 print("Requisição recebida para /api/lists")
+                print(f"Diretório de listas: {self.lists_dir.absolute()}")
                 response = self.handle_request(self.path)
                 if response:
                     self.send_response(200)
@@ -225,7 +232,15 @@ class WebHandler(SimpleHTTPRequestHandler):
             # Verifica se tem no cache e se ainda é válido
             if (cache_key in self._lists_cache and 
                 current_time - self._last_cache_update < self.cache_ttl):
+                print(f"Usando cache para {file_path.name}")
                 return self._lists_cache[cache_key]
+            
+            print(f"Lendo arquivo {file_path.name}")
+            
+            # Verifica se o arquivo existe
+            if not file_path.exists():
+                print(f"Arquivo não encontrado: {file_path}")
+                return None
             
             # Lê o arquivo CSV com detecção de encoding
             with open(file_path, 'rb') as f:
@@ -236,10 +251,21 @@ class WebHandler(SimpleHTTPRequestHandler):
                     detected = chardet.detect(raw_data)
                     if detected['confidence'] > 0.7:
                         encoding = detected['encoding']
+                        print(f"Encoding detectado para {file_path.name}: {encoding}")
                 except ImportError:
-                    pass
+                    print("Módulo chardet não encontrado, usando UTF-8")
+                except Exception as e:
+                    print(f"Erro ao detectar encoding: {str(e)}, usando UTF-8")
 
-            df = pd.read_csv(file_path, encoding=encoding)
+            # Tenta ler o CSV
+            try:
+                df = pd.read_csv(file_path, encoding=encoding)
+            except UnicodeDecodeError:
+                print(f"Erro de encoding, tentando com latin1 para {file_path.name}")
+                df = pd.read_csv(file_path, encoding='latin1')
+            except Exception as e:
+                print(f"Erro ao ler CSV {file_path.name}: {str(e)}")
+                return None
             
             # Verifica e padroniza as colunas
             required_columns = {'EMAIL', 'NOME'}
@@ -247,9 +273,10 @@ class WebHandler(SimpleHTTPRequestHandler):
             
             if not required_columns.issubset(columns):
                 missing = required_columns - columns
-                print(f"Aviso: Colunas ausentes em {file_path.name}: {missing}")
+                print(f"Colunas ausentes em {file_path.name}: {missing}")
                 return None
             
+            # Cria o objeto de informações
             info = {
                 'name': file_path.name,
                 'count': len(df),
@@ -258,30 +285,51 @@ class WebHandler(SimpleHTTPRequestHandler):
                 'preview': df.head(3).to_dict('records')
             }
             
-            # Atualiza o cache
-            self._lists_cache[cache_key] = info
-            self._last_cache_update = current_time
+            # Atualiza o cache da classe
+            self.__class__._lists_cache[cache_key] = info
+            self.__class__._last_cache_update = current_time
             
+            print(f"Arquivo {file_path.name} processado com sucesso")
             return info
+            
         except Exception as e:
-            print(f"Erro ao ler lista {file_path}: {e}")
+            print(f"Erro ao processar {file_path}: {str(e)}")
             return None
 
     def handle_request(self, path, method='GET', data=None):
         if path == '/api/lists' and method == 'GET':
             try:
                 lists = []
-                print(f"Buscando arquivos CSV em: {self.lists_dir}")
-                for file in sorted(self.lists_dir.glob('*.csv')):
+                print(f"Buscando arquivos CSV em: {self.lists_dir.absolute()}")
+                
+                # Verifica se o diretório existe
+                if not self.lists_dir.exists():
+                    print("Diretório de listas não encontrado. Criando...")
+                    self.lists_dir.mkdir(exist_ok=True)
+                
+                # Lista todos os arquivos CSV
+                csv_files = sorted(self.lists_dir.glob('*.csv'))
+                print(f"Arquivos CSV encontrados: {[f.name for f in csv_files]}")
+                
+                for file in csv_files:
                     print(f"Processando arquivo: {file}")
-                    info = self.get_list_info(file)
-                    if info:
-                        lists.append(info)
-                print(f"Total de listas encontradas: {len(lists)}")
+                    try:
+                        info = self.get_list_info(file)
+                        if info:
+                            lists.append(info)
+                            print(f"Lista processada com sucesso: {info['name']}")
+                        else:
+                            print(f"Arquivo ignorado (formato inválido): {file}")
+                    except Exception as e:
+                        print(f"Erro ao processar arquivo {file}: {str(e)}")
+                        continue
+                
+                print(f"Total de listas válidas encontradas: {len(lists)}")
                 return {'status': 'success', 'data': lists}
             except Exception as e:
-                print(f"Erro ao listar arquivos: {str(e)}")
-                return {'status': 'error', 'message': str(e)}
+                error_msg = f"Erro ao listar arquivos: {str(e)}"
+                print(error_msg)
+                return {'status': 'error', 'message': error_msg}
 
         elif path.startswith('/api/preview_list/') and method == 'GET':
             try:
@@ -290,7 +338,19 @@ class WebHandler(SimpleHTTPRequestHandler):
                 if not file_path.exists():
                     return {'status': 'error', 'message': 'Lista não encontrada'}
                 
-                df = pd.read_csv(file_path)
+                # Usa o mesmo método de leitura do get_list_info
+                with open(file_path, 'rb') as f:
+                    raw_data = f.read()
+                    encoding = 'utf-8'
+                    try:
+                        import chardet
+                        detected = chardet.detect(raw_data)
+                        if detected['confidence'] > 0.7:
+                            encoding = detected['encoding']
+                    except ImportError:
+                        pass
+
+                df = pd.read_csv(file_path, encoding=encoding)
                 preview_rows = df.head(10).to_dict('records')
                 return {'status': 'success', 'rows': preview_rows}
             except Exception as e:
@@ -314,11 +374,15 @@ class WebHandler(SimpleHTTPRequestHandler):
 
         elif path == '/api/schedule' and method == 'POST':
             try:
-                if not hasattr(self, 'selected_list'):
-                    return {'status': 'error', 'message': 'Nenhuma lista selecionada'}
+                if not data.get('list_name'):
+                    return {'status': 'error', 'message': 'Nome da lista não fornecido'}
+                
+                file_path = self.lists_dir / data['list_name']
+                if not file_path.exists():
+                    return {'status': 'error', 'message': 'Lista não encontrada'}
                 
                 # Lê a lista selecionada
-                df = pd.read_csv(self.selected_list)
+                df = pd.read_csv(file_path)
                 
                 # Cria o agendamento
                 schedule_id = len(self.schedules) + 1
@@ -330,23 +394,31 @@ class WebHandler(SimpleHTTPRequestHandler):
                     'preview': data.get('preview', ''),
                     'datetime': data['datetime'],
                     'status': 'pendente',
-                    'list_path': self.selected_list,
+                    'list_path': str(file_path),
                     'total_emails': len(df)
                 }
                 
-                self.schedules[schedule_id] = schedule
+                self.schedules.append(schedule)
                 return {'status': 'success', 'schedule': schedule}
                 
             except Exception as e:
-                return {'status': 'error', 'message': str(e)}
+                error_msg = f"Erro ao criar agendamento: {str(e)}"
+                print(error_msg)
+                return {'status': 'error', 'message': error_msg}
 
 def run_server(port=8000):
     server_address = ('', port)
-    WebHandler.init_scheduler()  # Inicia o scheduler antes de iniciar o servidor
+    print(f"\n=== Iniciando servidor em http://localhost:{port} ===")
+    
+    # Inicializa o scheduler
+    print("Inicializando scheduler...")
+    WebHandler.init_scheduler()
+    
+    # Cria e inicia o servidor
+    print("Criando servidor HTTP...")
     httpd = HTTPServer(server_address, WebHandler)
-    print(f"Servidor rodando em http://localhost:{port}")
+    print(f"Servidor pronto! Acesse http://localhost:{port}")
     httpd.serve_forever()
 
 if __name__ == '__main__':
-    run_server() 
     run_server() 
