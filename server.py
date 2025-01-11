@@ -2,7 +2,6 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
 import os
 from datetime import datetime
-import cgi
 from urllib.parse import parse_qs, urlparse
 from sender import EmailDispatcher
 from scheduler import EmailScheduler
@@ -16,8 +15,7 @@ class WebHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dispatcher = EmailDispatcher()
-        self.scheduler = EmailScheduler()
-        self.schedules = {}
+        self.scheduler = EmailScheduler(self.schedules)
         self.lists_dir = Path('lists')
         self.lists_dir.mkdir(exist_ok=True)
 
@@ -55,6 +53,29 @@ class WebHandler(SimpleHTTPRequestHandler):
                     }
                 
                 self.wfile.write(json.dumps(stats).encode())
+                return
+            elif self.path == '/schedules':
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(self.schedules).encode())
+                return
+            elif self.path == '/list_templates':
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                
+                templates = []
+                try:
+                    for arquivo in os.listdir('templates'):
+                        if arquivo.endswith('.html'):
+                            templates.append(arquivo)
+                except Exception as e:
+                    print(f"Erro ao listar templates: {str(e)}")
+                
+                self.wfile.write(json.dumps(sorted(templates)).encode())
                 return
             else:
                 # Serve arquivos estáticos

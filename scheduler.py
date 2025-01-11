@@ -10,8 +10,8 @@ import sqlite3
 from pathlib import Path
 
 class EmailScheduler:
-    def __init__(self, schedules):
-        self.schedules = schedules
+    def __init__(self, schedules=None):
+        self.schedules = schedules if schedules is not None else []
         self.dispatcher = EmailDispatcher()
         self.timezone = pytz.timezone('America/Sao_Paulo')
         self.running = False
