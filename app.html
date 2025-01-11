@@ -138,6 +138,39 @@
             height: 2px;
             background: linear-gradient(45deg, #FFD700, #FFA500);
         }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading-pulse {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-skeleton {
+            background: linear-gradient(
+                90deg,
+                #1a1a1a 25%,
+                #222222 50%,
+                #1a1a1a 75%
+            );
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            to {
+                background-position: -200% 0;
+            }
+        }
     </style>
 </head>
 <body class="bg-black">
@@ -258,10 +291,22 @@
                             <div class="sm:col-span-6">
                                 <label class="block text-sm font-medium text-gray-300">Lista de Emails</label>
                                 <div class="mt-1 relative">
+                                    <!-- Loading state -->
+                                    <div v-if="isLoadingLists" class="absolute inset-y-0 right-0 pr-8 flex items-center pointer-events-none">
+                                        <svg class="animate-spin h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </div>
+                                    
                                     <select v-model="scheduleForm.selectedList" 
                                             class="mt-1 block w-full pl-3 pr-10 py-2 text-base rounded-md"
-                                            :class="{'border-yellow-500': scheduleForm.selectedList}">
-                                        <option value="" disabled>Selecione uma lista</option>
+                                            :class="{
+                                                'border-yellow-500': scheduleForm.selectedList,
+                                                'opacity-75': isLoadingLists
+                                            }"
+                                            :disabled="isLoadingLists">
+                                        <option value="" disabled>{{ isLoadingLists ? 'Carregando listas...' : 'Selecione uma lista' }}</option>
                                         <option v-for="list in lists" 
                                                 :key="list.name" 
                                                 :value="list"
@@ -269,6 +314,7 @@
                                             {{ list.name }} ({{ list.count }} emails)
                                         </option>
                                     </select>
+                                    
                                     <div v-if="scheduleForm.selectedList" class="mt-2 flex items-center justify-between">
                                         <p class="text-sm text-gray-400">
                                             Última modificação: {{ new Date(scheduleForm.selectedList.modified).toLocaleString('pt-BR') }}
@@ -277,12 +323,31 @@
                                             Lista selecionada ✓
                                         </span>
                                     </div>
+                                    
                                     <div v-if="scheduleForm.selectedList" class="mt-4">
                                         <button @click="loadPreview(scheduleForm.selectedList.name)" 
-                                                class="text-sm text-yellow-500 hover:text-yellow-400 focus:outline-none">
-                                            Ver preview da lista
+                                                class="text-sm text-yellow-500 hover:text-yellow-400 focus:outline-none"
+                                                :disabled="isLoadingPreview">
+                                            <span v-if="!isLoadingPreview">Ver preview da lista</span>
+                                            <span v-else class="flex items-center">
+                                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Carregando preview...
+                                            </span>
                                         </button>
-                                        <div v-if="previewData" class="mt-2">
+                                        
+                                        <!-- Loading skeleton for preview -->
+                                        <div v-if="isLoadingPreview" class="mt-2">
+                                            <div class="h-4 w-3/4 bg-[#1a1a1a] rounded loading-skeleton mb-2"></div>
+                                            <div class="space-y-2">
+                                                <div v-for="i in 3" :key="i" class="h-4 w-full bg-[#1a1a1a] rounded loading-skeleton"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Actual preview data -->
+                                        <div v-if="previewData && !isLoadingPreview" class="mt-2">
                                             <p class="text-sm font-medium text-gray-300 mb-2">
                                                 Preview dos primeiros registros (total: {{ previewData.total_rows }} emails):
                                             </p>
@@ -337,14 +402,54 @@
                             <div>
                                 <button @click="scheduleEmails" 
                                         :disabled="!isScheduleFormValid"
-                                        :class="{'opacity-50 cursor-not-allowed': !isScheduleFormValid}"
+                                        :class="{
+                                            'opacity-50 cursor-not-allowed': !isScheduleFormValid,
+                                            'hover:transform hover:-translate-y-1': isScheduleFormValid
+                                        }"
                                         class="btn-primary inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm">
-                                    Agendar Envio
+                                    <span v-if="isScheduleFormValid">Agendar Envio</span>
+                                    <span v-else class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Preencha todos os campos
+                                    </span>
                                 </button>
                             </div>
                             <div v-if="scheduleForm.selectedList" class="text-sm text-gray-400">
                                 Total de emails: {{ scheduleForm.selectedList.count }}
                             </div>
+                        </div>
+
+                        <!-- Feedback de campos obrigatórios -->
+                        <div v-if="!isScheduleFormValid" class="mt-4">
+                            <p class="text-sm text-yellow-500">Campos obrigatórios:</p>
+                            <ul class="mt-2 text-sm text-gray-400 space-y-1">
+                                <li v-if="!scheduleForm.selectedList" class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    Selecione uma lista de emails
+                                </li>
+                                <li v-if="!scheduleForm.template" class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    Selecione um template
+                                </li>
+                                <li v-if="!scheduleForm.date || !scheduleForm.time" class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    Defina a data e hora do envio
+                                </li>
+                                <li v-if="!scheduleForm.subject" class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    Digite o assunto do email
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -428,7 +533,7 @@
     </div>
 
     <script>
-        const { createApp, ref } = Vue
+        const { createApp, ref, computed } = Vue
 
         createApp({
             setup() {
@@ -438,6 +543,8 @@
                 const notification = ref({ show: false, message: '', type: 'success' })
                 const schedules = ref([])
                 const previewData = ref(null)
+                const isLoadingLists = ref(false)
+                const isLoadingPreview = ref(false)
 
                 const testForm = ref({
                     template: '',
@@ -459,10 +566,20 @@
                     preview: ''
                 })
 
+                // Computed property para validar o formulário
+                const isScheduleFormValid = computed(() => {
+                    return scheduleForm.value.selectedList &&
+                           scheduleForm.value.template &&
+                           scheduleForm.value.date &&
+                           scheduleForm.value.time &&
+                           scheduleForm.value.subject
+                })
+
                 // Carrega preview de uma lista
                 async function loadPreview(listName) {
                     try {
                         previewData.value = null
+                        isLoadingPreview.value = true
                         const response = await fetch(`/api/preview_list/${listName}`)
                         const data = await response.json()
                         if (data.status === 'success') {
@@ -473,12 +590,16 @@
                     } catch (error) {
                         console.error('Erro ao carregar preview:', error)
                         showNotification('Erro ao carregar preview', 'error')
+                    } finally {
+                        isLoadingPreview.value = false
                     }
                 }
 
                 // Carrega a lista de templates e listas de email
                 async function loadData() {
                     try {
+                        isLoadingLists.value = true
+                        
                         // Carrega templates
                         const templatesResponse = await fetch('/list_templates')
                         templates.value = await templatesResponse.json()
@@ -496,6 +617,8 @@
                     } catch (error) {
                         console.error('Erro ao carregar dados:', error)
                         showNotification('Erro ao carregar dados', 'error')
+                    } finally {
+                        isLoadingLists.value = false
                     }
                 }
 
@@ -633,6 +756,9 @@
                     scheduleForm,
                     notification,
                     previewData,
+                    isLoadingLists,
+                    isLoadingPreview,
+                    isScheduleFormValid,
                     sendTestEmail,
                     scheduleEmails,
                     cancelSchedule,
