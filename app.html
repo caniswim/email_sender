@@ -46,10 +46,65 @@
             background: #1a1a1a !important;
             border-color: #333333 !important;
             color: #ffffff !important;
+            cursor: text;
+            transition: all 0.2s ease;
+            outline: none !important;
+        }
+        select {
+            cursor: pointer;
         }
         input:focus, select:focus {
             border-color: #FFD700 !important;
-            ring-color: #FFD700 !important;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+            outline: none !important;
+        }
+        input[type="checkbox"] {
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 0.25rem;
+            border: 2px solid #333333;
+            background-color: #1a1a1a;
+            transition: all 0.2s ease;
+        }
+        input[type="checkbox"]:checked {
+            background-color: #FFD700;
+            border-color: #FFD700;
+        }
+        input[type="date"], input[type="time"] {
+            cursor: pointer;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #333333;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+        .form-input:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+        }
+        .form-select {
+            width: 100%;
+            padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #333333;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23FFD700' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+        .form-select:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
         }
         .clickable {
             cursor: pointer;
@@ -137,7 +192,7 @@
                     <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         <div class="sm:col-span-3">
                             <label class="block text-sm font-medium text-gray-300">Template</label>
-                            <select v-model="testForm.template" class="mt-1 block w-full pl-3 pr-10 py-2 text-base rounded-md">
+                            <select v-model="testForm.template" class="form-select">
                                 <option v-for="template in templates" :value="template">{{ template }}</option>
                             </select>
                         </div>
@@ -145,28 +200,28 @@
                         <div class="sm:col-span-3">
                             <label class="block text-sm font-medium text-gray-300">Email de Teste</label>
                             <div class="mt-1">
-                                <input type="email" v-model="testForm.email" class="shadow-sm block w-full sm:text-sm rounded-md">
+                                <input type="email" v-model="testForm.email" class="form-input">
                             </div>
                         </div>
 
                         <div class="sm:col-span-3">
                             <label class="block text-sm font-medium text-gray-300">Nome</label>
                             <div class="mt-1">
-                                <input type="text" v-model="testForm.name" class="shadow-sm block w-full sm:text-sm rounded-md">
+                                <input type="text" v-model="testForm.name" class="form-input">
                             </div>
                         </div>
 
                         <div class="sm:col-span-6">
                             <label class="block text-sm font-medium text-gray-300">Assunto</label>
                             <div class="mt-1">
-                                <input type="text" v-model="testForm.subject" class="shadow-sm block w-full sm:text-sm rounded-md">
+                                <input type="text" v-model="testForm.subject" class="form-input">
                             </div>
                         </div>
 
                         <div class="sm:col-span-6">
                             <label class="block text-sm font-medium text-gray-300">Preview</label>
                             <div class="mt-1">
-                                <input type="text" v-model="testForm.preview" class="shadow-sm block w-full sm:text-sm rounded-md">
+                                <input type="text" v-model="testForm.preview" class="form-input">
                             </div>
                         </div>
 
