@@ -4,20 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Envio - Blazee</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-gray-50">
-    <div class="min-h-screen" x-data="dashboard()">
+    <div class="min-h-screen" x-data="dashboard()" x-cloak>
         <!-- Header -->
         <header class="bg-white shadow">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
                 <h1 class="text-3xl font-bold text-gray-900">Dashboard de Envio</h1>
                 <div class="flex items-center space-x-4">
-                    <span x-show="stats.status" x-text="getStatusText(stats.status)" 
+                    <span x-show="stats && stats.status" x-text="getStatusText(stats.status)" 
                           :class="getStatusClass(stats.status)"
                           class="px-3 py-1 rounded-full text-sm font-medium"></span>
                     <button @click="refreshData" 
@@ -46,7 +47,7 @@
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 truncate">Total de Emails</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats.total">0</div>
+                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.total || 0">0</div>
                                     </dd>
                                 </dl>
                             </div>
@@ -68,9 +69,9 @@
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 truncate">Enviados</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats.enviados">0</div>
+                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.enviados || 0">0</div>
                                         <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                            <span x-text="getPercentage(stats.enviados, stats.total) + '%'">0%</span>
+                                            <span x-text="getPercentage(stats?.enviados || 0, stats?.total || 0) + '%'">0%</span>
                                         </div>
                                     </dd>
                                 </dl>
@@ -93,9 +94,9 @@
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 truncate">Falhas</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats.falhas">0</div>
+                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.falhas || 0">0</div>
                                         <div class="ml-2 flex items-baseline text-sm font-semibold text-red-600">
-                                            <span x-text="getPercentage(stats.falhas, stats.total) + '%'">0%</span>
+                                            <span x-text="getPercentage(stats?.falhas || 0, stats?.total || 0) + '%'">0%</span>
                                         </div>
                                     </dd>
                                 </dl>
@@ -118,9 +119,9 @@
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 truncate">Inválidos</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats.invalidos">0</div>
+                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.invalidos || 0">0</div>
                                         <div class="ml-2 flex items-baseline text-sm font-semibold text-yellow-600">
-                                            <span x-text="getPercentage(stats.invalidos, stats.total) + '%'">0%</span>
+                                            <span x-text="getPercentage(stats?.invalidos || 0, stats?.total || 0) + '%'">0%</span>
                                         </div>
                                     </dd>
                                 </dl>
@@ -139,7 +140,7 @@
             </div>
 
             <!-- Error List -->
-            <div class="mt-8 bg-white shadow rounded-lg p-6" x-show="stats.erros.length > 0">
+            <div class="mt-8 bg-white shadow rounded-lg p-6" x-show="stats?.erros?.length > 0">
                 <h2 class="text-lg font-medium text-gray-900">Últimos Erros</h2>
                 <div class="mt-4 flow-root">
                     <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -153,7 +154,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
-                                    <template x-for="erro in stats.erros.slice(-5).reverse()" :key="erro.timestamp">
+                                    <template x-for="erro in (stats?.erros || []).slice(-5).reverse()" :key="erro.timestamp">
                                         <tr>
                                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900" x-text="erro.email"></td>
                                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500" x-text="erro.erro"></td>
@@ -169,15 +170,13 @@
         </main>
     </div>
 
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
-        function dashboard() {
-            return {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dashboard', () => ({
                 stats: null,
                 chart: null,
                 
                 init() {
-                    // Inicializa stats com valores padrão
                     this.stats = {
                         total: 0,
                         enviados: 0,
@@ -190,7 +189,6 @@
                     };
                     this.refreshData();
                     this.initChart();
-                    // Atualiza a cada 5 segundos
                     setInterval(() => this.refreshData(), 5000);
                 },
                 
@@ -230,6 +228,8 @@
                 },
                 
                 updateChart() {
+                    if (!this.chart || !this.stats) return;
+                    
                     const pendentes = this.stats.total - this.stats.enviados - this.stats.falhas - this.stats.invalidos;
                     this.chart.data.datasets[0].data = [
                         this.stats.enviados,
@@ -268,12 +268,13 @@
                 },
                 
                 formatDate(timestamp) {
+                    if (!timestamp) return '';
                     return new Date(timestamp).toLocaleString('pt-BR', {
                         timeZone: 'America/Sao_Paulo'
                     });
                 }
-            }
-        }
+            }));
+        });
     </script>
 </body>
 </html> 

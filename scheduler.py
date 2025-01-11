@@ -3,6 +3,9 @@ from datetime import datetime
 import pytz
 import threading
 from sender import EmailDispatcher
+from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
+import os
 
 class EmailScheduler:
     def __init__(self, schedules):
@@ -11,6 +14,11 @@ class EmailScheduler:
         self.timezone = pytz.timezone('America/Sao_Paulo')
         self.running = False
         self.thread = None
+        
+        # Configurações de otimização
+        self.max_workers = 4  # Número de threads para envio
+        self.batch_size = 1000  # Tamanho de cada lote
+        self.thread_pool = ThreadPoolExecutor(max_workers=self.max_workers)
     
     def start(self):
         """Inicia o scheduler em uma thread separada"""
@@ -25,6 +33,7 @@ class EmailScheduler:
         self.running = False
         if self.thread:
             self.thread.join()
+        self.thread_pool.shutdown(wait=True)
     
     def _run(self):
         """Loop principal do scheduler"""
@@ -40,10 +49,8 @@ class EmailScheduler:
                     # Converte a string de data para datetime com fuso horário
                     schedule_time = datetime.fromisoformat(schedule['datetime'].replace(' ', 'T'))
                     if schedule_time.tzinfo is None:
-                        # Se a data não tem fuso horário, adiciona
                         schedule_time = self.timezone.localize(schedule_time)
                     else:
-                        # Se já tem fuso horário, converte para São Paulo
                         schedule_time = schedule_time.astimezone(self.timezone)
                     
                     if schedule_time <= now:
@@ -53,8 +60,25 @@ class EmailScheduler:
                     schedule['status'] = 'erro'
                     schedule['error'] = str(e)
             
-            # Aguarda 1 minuto antes da próxima verificação
             time.sleep(60)
+    
+    def _process_batch(self, batch_df, template_path, horario_envio, assunto, remetente):
+        """Processa um lote de emails"""
+        # Cria um arquivo temporário para o lote
+        batch_file = f'temp_batch_{threading.get_ident()}.csv'
+        try:
+            batch_df.to_csv(batch_file, index=False)
+            return self.dispatcher.enviar_emails(
+                lista_emails_path=batch_file,
+                template_path=template_path,
+                horario_envio=horario_envio,
+                assunto=assunto,
+                remetente=remetente
+            )
+        finally:
+            # Limpa o arquivo temporário
+            if os.path.exists(batch_file):
+                os.remove(batch_file)
     
     def _process_schedule(self, schedule):
         """Processa um agendamento"""
@@ -68,12 +92,11 @@ class EmailScheduler:
             horario_envio = horario_envio.strftime('%Y-%m-%d %H:%M:%S')
             
             if schedule['type'] == 'test':
-                # Cria arquivo CSV temporário para email de teste
+                # Para emails de teste, mantém o processamento simples
                 with open('teste_email.csv', 'w') as f:
                     f.write("EMAIL,NOME\n")
                     f.write(f"{schedule['email']},{schedule['name']}")
                 
-                # Envia o email de teste
                 result = self.dispatcher.enviar_emails(
                     lista_emails_path='teste_email.csv',
                     template_path=f"templates/{schedule['template']}",
@@ -82,22 +105,35 @@ class EmailScheduler:
                     remetente='Blazee <contato@useblazee.com.br>'
                 )
                 
-                # Remove o arquivo temporário
-                import os
                 os.remove('teste_email.csv')
+                schedule['status'] = 'concluido' if result else 'erro'
             
             else:  # type == 'mass'
-                # Envia email em massa
-                result = self.dispatcher.enviar_emails(
-                    lista_emails_path='lista_completa.csv',
-                    template_path=f"templates/{schedule['template']}",
-                    horario_envio=horario_envio,
-                    assunto=schedule['subject'],
-                    remetente='Blazee <contato@useblazee.com.br>'
-                )
-            
-            schedule['status'] = 'concluido' if result else 'erro'
+                # Processa em lotes usando múltiplas threads
+                df = pd.read_csv('lista_completa.csv')
+                total_rows = len(df)
+                futures = []
+                
+                # Divide em lotes e submete para o pool de threads
+                for start in range(0, total_rows, self.batch_size):
+                    end = min(start + self.batch_size, total_rows)
+                    batch_df = df.iloc[start:end]
+                    
+                    future = self.thread_pool.submit(
+                        self._process_batch,
+                        batch_df,
+                        f"templates/{schedule['template']}",
+                        horario_envio,
+                        schedule['subject'],
+                        'Blazee <contato@useblazee.com.br>'
+                    )
+                    futures.append(future)
+                
+                # Aguarda todos os lotes terminarem
+                results = [future.result() for future in futures]
+                schedule['status'] = 'concluido' if all(results) else 'erro'
         
         except Exception as e:
             schedule['status'] = 'erro'
-            schedule['error'] = str(e) 
+            schedule['error'] = str(e)
+            print(f"Erro no processamento do agendamento: {e}") 
