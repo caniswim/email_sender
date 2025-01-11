@@ -203,69 +203,69 @@ class EmailScheduler:
             time.sleep(60)
     
     def _process_schedule(self, schedule):
-        """Processa um agendamento"""
         try:
-            schedule['status'] = 'enviando'
-            campaign_id = schedule.get('id', str(int(time.time())))
-            
-            horario_envio = datetime.fromisoformat(schedule['datetime'].replace(' ', 'T'))
-            if horario_envio.tzinfo is None:
-                horario_envio = self.timezone.localize(horario_envio)
-            horario_envio = horario_envio.strftime('%Y-%m-%d %H:%M:%S')
-            
             if schedule['type'] == 'test':
-                with open('teste_email.csv', 'w') as f:
-                    f.write("EMAIL,NOME\n")
-                    f.write(f"{schedule['email']},{schedule['name']}")
-                
-                result = self.dispatcher.enviar_emails(
-                    lista_emails_path='teste_email.csv',
-                    template_path=f"templates/{schedule['template']}",
-                    horario_envio=horario_envio,
-                    assunto=schedule['subject'],
-                    remetente='Blazee <contato@useblazee.com.br>'
+                # Processa email de teste
+                result = self.dispatcher.enviar_email(
+                    schedule['email'],
+                    schedule['name'],
+                    schedule['subject'],
+                    schedule['template'],
+                    schedule['preview']
                 )
+                return result
+            elif schedule['type'] == 'mass':
+                # Processa lista de emails em massa
+                df = pd.read_csv(schedule['list_path'])
                 
-                os.remove('teste_email.csv')
-                if not result and hasattr(self.dispatcher, 'last_error'):
-                    self.add_invalid_email(schedule['email'], str(self.dispatcher.last_error), campaign_id)
-                schedule['status'] = 'concluido' if result else 'erro'
-            
-            else:  # type == 'mass'
-                df = pd.read_csv('lista_completa.csv')
-                # Remove emails inválidos antes de começar
-                df = self.filter_invalid_emails(df)
-                total_rows = len(df)
-                success = True
+                # Processa em lotes
+                batch_size = 250
+                total_enviados = 0
+                total_falhas = 0
                 
-                for start in range(0, total_rows, self.batch_size):
-                    end = min(start + self.batch_size, total_rows)
-                    batch_df = df.iloc[start:end]
+                for i in range(0, len(df), batch_size):
+                    batch = df.iloc[i:i+batch_size]
                     
-                    result = self.process_with_rate_limit(
-                        batch_df,
-                        f"templates/{schedule['template']}",
-                        horario_envio,
-                        schedule['subject'],
-                        'Blazee <contato@useblazee.com.br>',
-                        campaign_id
-                    )
+                    # Verifica uso de memória antes de processar o lote
+                    if psutil.virtual_memory().percent > 75:
+                        print("Uso de memória alto, aguardando...")
+                        time.sleep(10)
                     
-                    if not result:
-                        print(f"Falha no lote {start}-{end}, pausando...")
-                        time.sleep(60)
-                        success = False
-                        break
+                    # Processa cada email do lote
+                    for _, row in batch.iterrows():
+                        try:
+                            result = self.dispatcher.enviar_email(
+                                row['EMAIL'],
+                                row.get('NOME', ''),
+                                schedule['subject'],
+                                schedule['template'],
+                                schedule['preview']
+                            )
+                            
+                            if result['success']:
+                                total_enviados += 1
+                            else:
+                                total_falhas += 1
+                            
+                            # Pausa entre emails
+                            time.sleep(0.05)  # 50ms entre emails
+                            
+                        except Exception as e:
+                            print(f"Erro ao enviar email para {row['EMAIL']}: {e}")
+                            total_falhas += 1
                     
-                    progress = (end / total_rows) * 100
-                    print(f"Progresso: {progress:.1f}% ({end}/{total_rows})")
+                    # Pausa entre lotes
+                    time.sleep(10)
                 
-                schedule['status'] = 'concluido' if success else 'erro'
-        
+                return {
+                    'success': True,
+                    'total_enviados': total_enviados,
+                    'total_falhas': total_falhas
+                }
+                
         except Exception as e:
-            schedule['status'] = 'erro'
-            schedule['error'] = str(e)
-            print(f"Erro no processamento do agendamento: {e}")
+            print(f"Erro ao processar agendamento: {e}")
+            return {'success': False, 'error': str(e)}
     
     def __del__(self):
         """Tenta fechar a conexão com o banco de dados ao destruir o objeto"""

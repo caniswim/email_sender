@@ -8,31 +8,82 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: #000000;
+            color: #ffffff;
+        }
         [v-cloak] { display: none; }
+        .card {
+            background: #111111;
+            border: 1px solid #222222;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
+        }
+        .gradient-border {
+            position: relative;
+            border-radius: 0.5rem;
+            padding: 1px;
+            background: linear-gradient(45deg, #333333, #222222);
+        }
+        .gradient-border::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 0.5rem;
+            padding: 1px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        input, select {
+            background: #1a1a1a !important;
+            border-color: #333333 !important;
+            color: #ffffff !important;
+        }
+        input:focus, select:focus {
+            border-color: #FFD700 !important;
+            ring-color: #FFD700 !important;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #FFD700, #FFA500) !important;
+            color: #000000 !important;
+            border: none !important;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-black">
     <div id="app" v-cloak>
         <!-- Navigation -->
-        <nav class="bg-white shadow">
+        <nav class="bg-[#111111] border-b border-[#222222]">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex">
                         <div class="flex-shrink-0 flex items-center">
-                            <span class="text-2xl font-bold text-blue-600">Blazee</span>
+                            <span class="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">Blazee</span>
                         </div>
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                             <a @click="currentView = 'test'" 
-                               :class="[currentView === 'test' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
+                               :class="[currentView === 'test' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
                                 Teste de Envio
                             </a>
                             <a @click="currentView = 'schedule'"
-                               :class="[currentView === 'schedule' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
+                               :class="[currentView === 'schedule' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
                                 Agendar Envio
                             </a>
                             <a @click="currentView = 'dashboard'"
-                               :class="[currentView === 'dashboard' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
+                               :class="[currentView === 'dashboard' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
                                 Dashboard
                             </a>
                         </div>
@@ -44,75 +95,75 @@
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <!-- Test Email View -->
-            <div v-if="currentView === 'test'" class="bg-white shadow sm:rounded-lg">
-                <div class="px-4 py-5 sm:p-6">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">Enviar Email de Teste</h3>
+            <div v-if="currentView === 'test'" class="gradient-border">
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-lg leading-6 font-medium text-white">Enviar Email de Teste</h3>
                     <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         <div class="sm:col-span-3">
-                            <label class="block text-sm font-medium text-gray-700">Template</label>
-                            <select v-model="testForm.template" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <label class="block text-sm font-medium text-gray-300">Template</label>
+                            <select v-model="testForm.template" class="mt-1 block w-full pl-3 pr-10 py-2 text-base rounded-md">
                                 <option v-for="template in templates" :value="template">{{ template }}</option>
                             </select>
                         </div>
 
                         <div class="sm:col-span-3">
-                            <label class="block text-sm font-medium text-gray-700">Email de Teste</label>
+                            <label class="block text-sm font-medium text-gray-300">Email de Teste</label>
                             <div class="mt-1">
-                                <input type="email" v-model="testForm.email" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <input type="email" v-model="testForm.email" class="shadow-sm block w-full sm:text-sm rounded-md">
                             </div>
                         </div>
 
                         <div class="sm:col-span-3">
-                            <label class="block text-sm font-medium text-gray-700">Nome</label>
+                            <label class="block text-sm font-medium text-gray-300">Nome</label>
                             <div class="mt-1">
-                                <input type="text" v-model="testForm.name" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <input type="text" v-model="testForm.name" class="shadow-sm block w-full sm:text-sm rounded-md">
                             </div>
                         </div>
 
                         <div class="sm:col-span-6">
-                            <label class="block text-sm font-medium text-gray-700">Assunto</label>
+                            <label class="block text-sm font-medium text-gray-300">Assunto</label>
                             <div class="mt-1">
-                                <input type="text" v-model="testForm.subject" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <input type="text" v-model="testForm.subject" class="shadow-sm block w-full sm:text-sm rounded-md">
                             </div>
                         </div>
 
                         <div class="sm:col-span-6">
-                            <label class="block text-sm font-medium text-gray-700">Preview</label>
+                            <label class="block text-sm font-medium text-gray-300">Preview</label>
                             <div class="mt-1">
-                                <input type="text" v-model="testForm.preview" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <input type="text" v-model="testForm.preview" class="shadow-sm block w-full sm:text-sm rounded-md">
                             </div>
                         </div>
 
                         <div class="sm:col-span-6">
                             <div class="relative flex items-start">
                                 <div class="flex items-center h-5">
-                                    <input type="checkbox" v-model="testForm.schedule" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                    <input type="checkbox" v-model="testForm.schedule" class="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-700 rounded bg-[#1a1a1a]">
                                 </div>
                                 <div class="ml-3 text-sm">
-                                    <label class="font-medium text-gray-700">Agendar envio</label>
+                                    <label class="font-medium text-gray-300">Agendar envio</label>
                                 </div>
                             </div>
                         </div>
 
                         <template v-if="testForm.schedule">
                             <div class="sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Data de Envio</label>
+                                <label class="block text-sm font-medium text-gray-300">Data de Envio</label>
                                 <div class="mt-1">
-                                    <input type="date" v-model="testForm.date" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <input type="date" v-model="testForm.date" class="shadow-sm block w-full sm:text-sm rounded-md">
                                 </div>
                             </div>
 
                             <div class="sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Hora de Envio</label>
+                                <label class="block text-sm font-medium text-gray-300">Hora de Envio</label>
                                 <div class="mt-1">
-                                    <input type="time" v-model="testForm.time" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <input type="time" v-model="testForm.time" class="shadow-sm block w-full sm:text-sm rounded-md">
                                 </div>
                             </div>
                         </template>
                     </div>
 
                     <div class="mt-6">
-                        <button @click="sendTestEmail" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <button @click="sendTestEmail" class="btn-primary inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm">
                             {{ testForm.schedule ? 'Agendar Email de Teste' : 'Enviar Email de Teste' }}
                         </button>
                     </div>
@@ -122,48 +173,48 @@
             <!-- Schedule View -->
             <div v-if="currentView === 'schedule'" class="space-y-6">
                 <!-- Formulário de Agendamento -->
-                <div class="bg-white shadow sm:rounded-lg">
-                    <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Agendar Envio em Massa</h3>
+                <div class="gradient-border">
+                    <div class="card p-6 rounded-lg">
+                        <h3 class="text-lg leading-6 font-medium text-white">Agendar Envio em Massa</h3>
                         <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                             <div class="sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Template</label>
-                                <select v-model="scheduleForm.template" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <label class="block text-sm font-medium text-gray-300">Template</label>
+                                <select v-model="scheduleForm.template" class="mt-1 block w-full pl-3 pr-10 py-2 text-base rounded-md">
                                     <option v-for="template in templates" :value="template">{{ template }}</option>
                                 </select>
                             </div>
 
                             <div class="sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Data de Envio</label>
+                                <label class="block text-sm font-medium text-gray-300">Data de Envio</label>
                                 <div class="mt-1">
-                                    <input type="date" v-model="scheduleForm.date" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <input type="date" v-model="scheduleForm.date" class="shadow-sm block w-full sm:text-sm rounded-md">
                                 </div>
                             </div>
 
                             <div class="sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Hora de Envio</label>
+                                <label class="block text-sm font-medium text-gray-300">Hora de Envio</label>
                                 <div class="mt-1">
-                                    <input type="time" v-model="scheduleForm.time" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <input type="time" v-model="scheduleForm.time" class="shadow-sm block w-full sm:text-sm rounded-md">
                                 </div>
                             </div>
 
                             <div class="sm:col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Assunto</label>
+                                <label class="block text-sm font-medium text-gray-300">Assunto</label>
                                 <div class="mt-1">
-                                    <input type="text" v-model="scheduleForm.subject" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <input type="text" v-model="scheduleForm.subject" class="shadow-sm block w-full sm:text-sm rounded-md">
                                 </div>
                             </div>
 
                             <div class="sm:col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Preview</label>
+                                <label class="block text-sm font-medium text-gray-300">Preview</label>
                                 <div class="mt-1">
-                                    <input type="text" v-model="scheduleForm.preview" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <input type="text" v-model="scheduleForm.preview" class="shadow-sm block w-full sm:text-sm rounded-md">
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-6">
-                            <button @click="scheduleEmails" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <button @click="scheduleEmails" class="btn-primary inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm">
                                 Agendar Envio
                             </button>
                         </div>
@@ -171,29 +222,29 @@
                 </div>
 
                 <!-- Lista de Agendamentos -->
-                <div class="bg-white shadow sm:rounded-lg">
-                    <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Agendamentos</h3>
+                <div class="gradient-border">
+                    <div class="card p-6 rounded-lg">
+                        <h3 class="text-lg leading-6 font-medium text-white mb-4">Agendamentos</h3>
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="min-w-full divide-y divide-gray-800">
                                 <thead>
                                     <tr>
-                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data/Hora</th>
-                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Template</th>
-                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assunto</th>
-                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Data/Hora</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Template</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Assunto</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="schedule in schedules" :key="schedule.id">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <tbody class="divide-y divide-gray-800">
+                                    <tr v-for="schedule in schedules" :key="schedule.id" class="hover:bg-[#1a1a1a]">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                                             {{ formatDateTime(schedule.datetime) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                                             {{ schedule.template }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                                             {{ schedule.subject }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -201,15 +252,15 @@
                                                 {{ getStatusText(schedule.status) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <button v-if="schedule.status === 'pendente'" @click="cancelSchedule(schedule.id)" 
-                                                    class="text-red-600 hover:text-red-900">
+                                                    class="text-red-500 hover:text-red-400">
                                                 Cancelar
                                             </button>
                                         </td>
                                     </tr>
                                     <tr v-if="schedules.length === 0">
-                                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-400">
                                             Nenhum agendamento encontrado
                                         </td>
                                     </tr>
@@ -226,20 +277,22 @@
 
         <!-- Notification -->
         <div v-if="notification.show" class="fixed bottom-0 right-0 m-6">
-            <div :class="['rounded-md p-4', notification.type === 'success' ? 'bg-green-50' : 'bg-red-50']">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg v-if="notification.type === 'success'" class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        <svg v-else class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p :class="['text-sm font-medium', notification.type === 'success' ? 'text-green-800' : 'text-red-800']">
-                            {{ notification.message }}
-                        </p>
+            <div class="gradient-border">
+                <div :class="['card rounded-lg p-4', notification.type === 'success' ? 'border-green-500' : 'border-red-500']">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg v-if="notification.type === 'success'" class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            <svg v-else class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p :class="['text-sm font-medium', notification.type === 'success' ? 'text-green-400' : 'text-red-400']">
+                                {{ notification.message }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
