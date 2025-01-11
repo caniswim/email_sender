@@ -173,19 +173,21 @@
     <script>
         function dashboard() {
             return {
-                stats: {
-                    total: 0,
-                    enviados: 0,
-                    falhas: 0,
-                    invalidos: 0,
-                    status: 'aguardando',
-                    inicio: null,
-                    fim: null,
-                    erros: []
-                },
+                stats: null,
                 chart: null,
                 
                 init() {
+                    // Inicializa stats com valores padrão
+                    this.stats = {
+                        total: 0,
+                        enviados: 0,
+                        falhas: 0,
+                        invalidos: 0,
+                        status: 'aguardando',
+                        inicio: null,
+                        fim: null,
+                        erros: []
+                    };
                     this.refreshData();
                     this.initChart();
                     // Atualiza a cada 5 segundos
@@ -266,7 +268,9 @@
                 },
                 
                 formatDate(timestamp) {
-                    return new Date(timestamp).toLocaleString('pt-BR');
+                    return new Date(timestamp).toLocaleString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo'
+                    });
                 }
             }
         }
