@@ -49,15 +49,29 @@
             cursor: text;
             z-index: 10;
             position: relative;
+            pointer-events: auto;
+            transition: all 0.2s ease;
         }
         select {
             cursor: pointer;
+            appearance: auto;
+            -webkit-appearance: auto;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23FFD700' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
         }
         input:focus, select:focus {
             border-color: #FFD700 !important;
             ring-color: #FFD700 !important;
             outline: none;
             box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+            transform: translateY(-1px);
+        }
+        input:hover, select:hover {
+            border-color: #FFD700 !important;
+            background: #222222 !important;
         }
         label {
             user-select: none;
@@ -65,6 +79,7 @@
         .form-group {
             position: relative;
             z-index: 1;
+            pointer-events: auto;
         }
         .table-row {
             cursor: pointer;
@@ -242,17 +257,24 @@
                             <!-- Lista de Emails -->
                             <div class="sm:col-span-6">
                                 <label class="block text-sm font-medium text-gray-300">Lista de Emails</label>
-                                <div class="mt-1">
-                                    <select v-model="scheduleForm.selectedList" class="mt-1 block w-full pl-3 pr-10 py-2 text-base rounded-md">
-                                        <option value="">Selecione uma lista</option>
+                                <div class="mt-1 relative">
+                                    <select v-model="scheduleForm.selectedList" 
+                                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base rounded-md"
+                                            :class="{'border-yellow-500': scheduleForm.selectedList}">
+                                        <option value="" disabled>Selecione uma lista</option>
                                         <option v-for="list in lists" :key="list.name" :value="list">
                                             {{ list.name }} ({{ list.count }} emails)
                                         </option>
                                     </select>
+                                    <div v-if="scheduleForm.selectedList" class="mt-2 flex items-center justify-between">
+                                        <p class="text-sm text-gray-400">
+                                            Última modificação: {{ formatDate(scheduleForm.selectedList.modified) }}
+                                        </p>
+                                        <span class="text-sm text-yellow-500">
+                                            Lista selecionada ✓
+                                        </span>
+                                    </div>
                                 </div>
-                                <p v-if="scheduleForm.selectedList" class="mt-2 text-sm text-gray-400">
-                                    Última modificação: {{ formatDate(scheduleForm.selectedList.modified) }}
-                                </p>
                             </div>
 
                             <div class="sm:col-span-3">

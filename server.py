@@ -18,6 +18,9 @@ class WebHandler(SimpleHTTPRequestHandler):
         self.scheduler = EmailScheduler(self.schedules)
         self.lists_dir = Path('lists')
         self.lists_dir.mkdir(exist_ok=True)
+        self._lists_cache = {}
+        self._last_cache_update = 0
+        self.cache_ttl = 30  # tempo em segundos
 
     @classmethod
     def init_scheduler(cls):
@@ -207,12 +210,50 @@ class WebHandler(SimpleHTTPRequestHandler):
 
     def get_list_info(self, file_path):
         try:
-            df = pd.read_csv(file_path)
-            return {
+            current_time = datetime.now().timestamp()
+            cache_key = str(file_path)
+            
+            # Verifica se tem no cache e se ainda é válido
+            if (cache_key in self._lists_cache and 
+                current_time - self._last_cache_update < self.cache_ttl):
+                return self._lists_cache[cache_key]
+            
+            # Lê o arquivo CSV com detecção de encoding
+            with open(file_path, 'rb') as f:
+                raw_data = f.read()
+                encoding = 'utf-8'
+                try:
+                    import chardet
+                    detected = chardet.detect(raw_data)
+                    if detected['confidence'] > 0.7:
+                        encoding = detected['encoding']
+                except ImportError:
+                    pass
+
+            df = pd.read_csv(file_path, encoding=encoding)
+            
+            # Verifica e padroniza as colunas
+            required_columns = {'EMAIL', 'NOME'}
+            columns = {col.upper() for col in df.columns}
+            
+            if not required_columns.issubset(columns):
+                missing = required_columns - columns
+                print(f"Aviso: Colunas ausentes em {file_path.name}: {missing}")
+                return None
+            
+            info = {
                 'name': file_path.name,
                 'count': len(df),
-                'modified': datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+                'modified': datetime.fromtimestamp(file_path.stat().st_mtime).isoformat(),
+                'columns': list(df.columns),
+                'preview': df.head(3).to_dict('records')
             }
+            
+            # Atualiza o cache
+            self._lists_cache[cache_key] = info
+            self._last_cache_update = current_time
+            
+            return info
         except Exception as e:
             print(f"Erro ao ler lista {file_path}: {e}")
             return None
@@ -221,7 +262,7 @@ class WebHandler(SimpleHTTPRequestHandler):
         if path == '/api/lists' and method == 'GET':
             try:
                 lists = []
-                for file in self.lists_dir.glob('*.csv'):
+                for file in sorted(self.lists_dir.glob('*.csv')):
                     info = self.get_list_info(file)
                     if info:
                         lists.append(info)
