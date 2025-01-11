@@ -262,17 +262,28 @@
                                             class="mt-1 block w-full pl-3 pr-10 py-2 text-base rounded-md"
                                             :class="{'border-yellow-500': scheduleForm.selectedList}">
                                         <option value="" disabled>Selecione uma lista</option>
-                                        <option v-for="list in lists" :key="list.name" :value="list">
+                                        <option v-for="list in lists" 
+                                                :key="list.name" 
+                                                :value="list"
+                                                :title="`${list.count} emails - Modificado em ${new Date(list.modified).toLocaleString('pt-BR')}`">
                                             {{ list.name }} ({{ list.count }} emails)
                                         </option>
                                     </select>
                                     <div v-if="scheduleForm.selectedList" class="mt-2 flex items-center justify-between">
                                         <p class="text-sm text-gray-400">
-                                            Última modificação: {{ formatDate(scheduleForm.selectedList.modified) }}
+                                            Última modificação: {{ new Date(scheduleForm.selectedList.modified).toLocaleString('pt-BR') }}
                                         </p>
                                         <span class="text-sm text-yellow-500">
                                             Lista selecionada ✓
                                         </span>
+                                    </div>
+                                    <div v-if="scheduleForm.selectedList && scheduleForm.selectedList.preview" class="mt-4">
+                                        <p class="text-sm font-medium text-gray-300 mb-2">Preview dos primeiros registros:</p>
+                                        <div class="bg-[#1a1a1a] rounded-md p-2 text-sm text-gray-400">
+                                            <div v-for="(row, index) in scheduleForm.selectedList.preview" :key="index" class="mb-1">
+                                                {{ row.EMAIL }} - {{ row.NOME }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -415,6 +426,7 @@
             setup() {
                 const currentView = ref('test')
                 const templates = ref([])
+                const lists = ref([])
                 const notification = ref({ show: false, message: '', type: 'success' })
                 const schedules = ref([])
 
@@ -430,6 +442,7 @@
                 })
 
                 const scheduleForm = ref({
+                    selectedList: null,
                     template: '',
                     date: '',
                     time: '',
@@ -437,25 +450,33 @@
                     preview: ''
                 })
 
-                // Carrega a lista de templates
-                async function loadTemplates() {
+                // Carrega a lista de templates e listas de email
+                async function loadData() {
                     try {
-                        const response = await fetch('/list_templates')
-                        templates.value = await response.json()
+                        // Carrega templates
+                        const templatesResponse = await fetch('/list_templates')
+                        templates.value = await templatesResponse.json()
+
+                        // Carrega listas de email
+                        const listsResponse = await fetch('/api/lists')
+                        const listsData = await listsResponse.json()
+                        if (listsData.status === 'success') {
+                            lists.value = listsData.data
+                            console.log('Listas carregadas:', lists.value)
+                        } else {
+                            console.error('Erro ao carregar listas:', listsData.message)
+                            showNotification('Erro ao carregar listas de email', 'error')
+                        }
                     } catch (error) {
-                        showNotification('Erro ao carregar templates', 'error')
+                        console.error('Erro ao carregar dados:', error)
+                        showNotification('Erro ao carregar dados', 'error')
                     }
                 }
 
-                // Carrega a lista de agendamentos
-                async function loadSchedules() {
-                    try {
-                        const response = await fetch('/schedules')
-                        schedules.value = await response.json()
-                    } catch (error) {
-                        showNotification('Erro ao carregar agendamentos', 'error')
-                    }
-                }
+                // Carrega os dados iniciais
+                loadData()
+                // Atualiza os dados a cada 30 segundos
+                setInterval(loadData, 30000)
 
                 // Envia ou agenda email de teste
                 async function sendTestEmail() {
@@ -484,7 +505,7 @@
                                 'success'
                             )
                             if (testForm.value.schedule) {
-                                loadSchedules()
+                                loadData()
                             }
                         } else {
                             showNotification(result.error || 'Erro ao processar email', 'error')
@@ -497,13 +518,19 @@
                 // Agenda envio em massa
                 async function scheduleEmails() {
                     try {
+                        if (!scheduleForm.value.selectedList) {
+                            showNotification('Selecione uma lista de emails', 'error')
+                            return
+                        }
+
                         const datetime = `${scheduleForm.value.date} ${scheduleForm.value.time}:00`
                         const data = {
                             ...scheduleForm.value,
+                            list_name: scheduleForm.value.selectedList.name,
                             datetime
                         }
 
-                        const response = await fetch('/schedule', {
+                        const response = await fetch('/api/schedule', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -512,11 +539,11 @@
                         })
                         
                         const result = await response.json()
-                        if (result.success) {
+                        if (result.status === 'success') {
                             showNotification('Envio agendado com sucesso!', 'success')
-                            loadSchedules()
+                            loadData()
                         } else {
-                            showNotification(result.error || 'Erro ao agendar envio', 'error')
+                            showNotification(result.message || 'Erro ao agendar envio', 'error')
                         }
                     } catch (error) {
                         showNotification('Erro ao agendar envio', 'error')
@@ -533,7 +560,7 @@
                         const result = await response.json()
                         if (result.success) {
                             showNotification('Agendamento cancelado com sucesso!', 'success')
-                            loadSchedules()
+                            loadData()
                         } else {
                             showNotification(result.error || 'Erro ao cancelar agendamento', 'error')
                         }
@@ -547,10 +574,6 @@
                     setTimeout(() => {
                         notification.value.show = false
                     }, 5000)
-                }
-
-                function formatDateTime(datetime) {
-                    return new Date(datetime).toLocaleString('pt-BR')
                 }
 
                 function getStatusBadgeClass(status) {
@@ -575,15 +598,10 @@
                     return texts[status] || status
                 }
 
-                // Carrega os dados iniciais
-                loadTemplates()
-                loadSchedules()
-                // Atualiza os agendamentos a cada 30 segundos
-                setInterval(loadSchedules, 30000)
-
                 return {
                     currentView,
                     templates,
+                    lists,
                     schedules,
                     testForm,
                     scheduleForm,
@@ -591,7 +609,6 @@
                     sendTestEmail,
                     scheduleEmails,
                     cancelSchedule,
-                    formatDateTime,
                     getStatusBadgeClass,
                     getStatusText
                 }

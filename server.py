@@ -31,7 +31,16 @@ class WebHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         try:
             if self.path == '/api/lists':
+                print("Requisição recebida para /api/lists")
                 response = self.handle_request(self.path)
+                if response:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    print(f"Enviando listas: {json.dumps(response)}")
+                    self.wfile.write(json.dumps(response).encode())
+                return
             elif self.path.startswith('/api/preview_list/'):
                 response = self.handle_request(self.path)
             elif self.path == '/api/stats':
@@ -262,12 +271,16 @@ class WebHandler(SimpleHTTPRequestHandler):
         if path == '/api/lists' and method == 'GET':
             try:
                 lists = []
+                print(f"Buscando arquivos CSV em: {self.lists_dir}")
                 for file in sorted(self.lists_dir.glob('*.csv')):
+                    print(f"Processando arquivo: {file}")
                     info = self.get_list_info(file)
                     if info:
                         lists.append(info)
+                print(f"Total de listas encontradas: {len(lists)}")
                 return {'status': 'success', 'data': lists}
             except Exception as e:
+                print(f"Erro ao listar arquivos: {str(e)}")
                 return {'status': 'error', 'message': str(e)}
 
         elif path.startswith('/api/preview_list/') and method == 'GET':
