@@ -9,20 +9,57 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
+        body {
+            background: #000000;
+            color: #ffffff;
+        }
+        .card {
+            background: #111111;
+            border: 1px solid #222222;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
+        }
+        .gradient-border {
+            position: relative;
+            border-radius: 0.5rem;
+            padding: 1px;
+            background: linear-gradient(45deg, #333333, #222222);
+        }
+        .gradient-border::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 0.5rem;
+            padding: 1px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="min-h-screen bg-black text-gray-100">
     <div class="min-h-screen" x-data="dashboard()" x-cloak>
         <!-- Header -->
-        <header class="bg-white shadow">
+        <header class="bg-[#111111] border-b border-[#222222]">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                <h1 class="text-3xl font-bold text-gray-900">Dashboard de Envio</h1>
+                <div class="flex items-center space-x-3">
+                    <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">Dashboard de Envio</h1>
+                </div>
                 <div class="flex items-center space-x-4">
                     <span x-show="stats && stats.status" x-text="getStatusText(stats.status)" 
                           :class="getStatusClass(stats.status)"
-                          class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                          class="px-4 py-2 rounded-full text-sm font-medium"></span>
                     <button @click="refreshData" 
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            class="bg-gradient-to-r from-yellow-500 to-orange-500 text-black px-6 py-2 rounded-lg font-semibold hover:from-yellow-400 hover:to-orange-400 transition-all duration-300 shadow-lg hover:shadow-xl">
                         Atualizar
                     </button>
                 </div>
@@ -30,24 +67,23 @@
         </header>
 
         <!-- Main Content -->
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                 <!-- Total -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
+                <div class="gradient-border">
+                    <div class="card p-6 rounded-lg bg-[#111111]">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Total de Emails</dt>
+                                    <dt class="text-sm font-medium text-gray-400">Total de Emails</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.total || 0">0</div>
+                                        <div class="text-2xl font-bold text-white" x-text="stats?.total || 0">0</div>
                                     </dd>
                                 </dl>
                             </div>
@@ -56,21 +92,20 @@
                 </div>
 
                 <!-- Enviados -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
+                <div class="gradient-border">
+                    <div class="card p-6 rounded-lg bg-[#111111]">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Enviados</dt>
+                                    <dt class="text-sm font-medium text-gray-400">Enviados</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.enviados || 0">0</div>
-                                        <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                        <div class="text-2xl font-bold text-white" x-text="stats?.enviados || 0">0</div>
+                                        <div class="ml-2 flex items-baseline text-sm font-medium text-green-500">
                                             <span x-text="getPercentage(stats?.enviados || 0, stats?.total || 0) + '%'">0%</span>
                                         </div>
                                     </dd>
@@ -81,21 +116,20 @@
                 </div>
 
                 <!-- Falhas -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
+                <div class="gradient-border">
+                    <div class="card p-6 rounded-lg bg-[#111111]">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <svg class="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Falhas</dt>
+                                    <dt class="text-sm font-medium text-gray-400">Falhas</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.falhas || 0">0</div>
-                                        <div class="ml-2 flex items-baseline text-sm font-semibold text-red-600">
+                                        <div class="text-2xl font-bold text-white" x-text="stats?.falhas || 0">0</div>
+                                        <div class="ml-2 flex items-baseline text-sm font-medium text-red-500">
                                             <span x-text="getPercentage(stats?.falhas || 0, stats?.total || 0) + '%'">0%</span>
                                         </div>
                                     </dd>
@@ -106,21 +140,20 @@
                 </div>
 
                 <!-- Inválidos -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
+                <div class="gradient-border">
+                    <div class="card p-6 rounded-lg bg-[#111111]">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Inválidos</dt>
+                                    <dt class="text-sm font-medium text-gray-400">Inválidos</dt>
                                     <dd class="flex items-baseline">
-                                        <div class="text-2xl font-semibold text-gray-900" x-text="stats?.invalidos || 0">0</div>
-                                        <div class="ml-2 flex items-baseline text-sm font-semibold text-yellow-600">
+                                        <div class="text-2xl font-bold text-white" x-text="stats?.invalidos || 0">0</div>
+                                        <div class="ml-2 flex items-baseline text-sm font-medium text-yellow-500">
                                             <span x-text="getPercentage(stats?.invalidos || 0, stats?.total || 0) + '%'">0%</span>
                                         </div>
                                     </dd>
@@ -132,38 +165,38 @@
             </div>
 
             <!-- Progress Chart -->
-            <div class="mt-8 bg-white shadow rounded-lg p-6">
-                <h2 class="text-lg font-medium text-gray-900">Progresso do Envio</h2>
-                <div class="mt-4">
-                    <canvas id="progressChart" class="w-full" height="100"></canvas>
+            <div class="gradient-border mb-8">
+                <div class="card p-6 rounded-lg bg-[#111111]">
+                    <h2 class="text-xl font-bold text-white mb-4">Progresso do Envio</h2>
+                    <div class="mt-4">
+                        <canvas id="progressChart" class="w-full" height="100"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Error List -->
-            <div class="mt-8 bg-white shadow rounded-lg p-6" x-show="stats?.erros?.length > 0">
-                <h2 class="text-lg font-medium text-gray-900">Últimos Erros</h2>
-                <div class="mt-4 flow-root">
-                    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                            <table class="min-w-full divide-y divide-gray-300">
-                                <thead>
-                                    <tr>
-                                        <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
-                                        <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Erro</th>
-                                        <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Horário</th>
+            <div class="gradient-border" x-show="stats?.erros?.length > 0">
+                <div class="card p-6 rounded-lg bg-[#111111]">
+                    <h2 class="text-xl font-bold text-white mb-4">Últimos Erros</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-800">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-300">Erro</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-300">Horário</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-800">
+                                <template x-for="erro in (stats?.erros || []).slice(-5).reverse()" :key="erro.timestamp">
+                                    <tr class="hover:bg-[#1a1a1a] transition-colors duration-150">
+                                        <td class="px-4 py-3 text-sm text-gray-300" x-text="erro.email"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-400" x-text="erro.erro"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-400" x-text="formatDate(erro.timestamp)"></td>
                                     </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <template x-for="erro in (stats?.erros || []).slice(-5).reverse()" :key="erro.timestamp">
-                                        <tr>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900" x-text="erro.email"></td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500" x-text="erro.erro"></td>
-                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500" x-text="formatDate(erro.timestamp)"></td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -205,6 +238,9 @@
                 
                 initChart() {
                     const ctx = document.getElementById('progressChart').getContext('2d');
+                    Chart.defaults.color = '#9ca3af';
+                    Chart.defaults.borderColor = '#374151';
+                    
                     this.chart = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
@@ -212,17 +248,31 @@
                             datasets: [{
                                 data: [0, 0, 0, 0],
                                 backgroundColor: [
-                                    '#10B981', // verde
-                                    '#EF4444', // vermelho
-                                    '#F59E0B', // amarelo
-                                    '#E5E7EB'  // cinza
-                                ]
+                                    '#10B981',  // verde
+                                    '#EF4444',  // vermelho
+                                    '#F59E0B',  // amarelo
+                                    '#374151'   // cinza escuro
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#000000'
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            cutout: '70%'
+                            cutout: '75%',
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        color: '#9ca3af',
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                }
+                            }
                         }
                     });
                 },
@@ -253,11 +303,11 @@
                 
                 getStatusClass(status) {
                     const classes = {
-                        'aguardando': 'bg-blue-100 text-blue-800',
-                        'iniciando': 'bg-yellow-100 text-yellow-800',
-                        'enviando': 'bg-blue-100 text-blue-800',
-                        'concluido': 'bg-green-100 text-green-800',
-                        'erro': 'bg-red-100 text-red-800'
+                        'aguardando': 'bg-[#1a1a1a] text-yellow-500 border border-yellow-500',
+                        'iniciando': 'bg-[#1a1a1a] text-blue-500 border border-blue-500',
+                        'enviando': 'bg-[#1a1a1a] text-green-500 border border-green-500',
+                        'concluido': 'bg-[#1a1a1a] text-green-500 border border-green-500',
+                        'erro': 'bg-[#1a1a1a] text-red-500 border border-red-500'
                     };
                     return classes[status] || '';
                 },
