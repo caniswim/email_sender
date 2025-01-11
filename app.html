@@ -51,15 +51,51 @@
             border-color: #FFD700 !important;
             ring-color: #FFD700 !important;
         }
+        .clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .clickable:hover {
+            opacity: 0.8;
+        }
         .btn-primary {
             background: linear-gradient(45deg, #FFD700, #FFA500) !important;
             color: #000000 !important;
             border: none !important;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
         .btn-primary:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+        .btn-secondary {
+            background: #1a1a1a !important;
+            color: #FFD700 !important;
+            border: 1px solid #FFD700 !important;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            background: #FFD700 !important;
+            color: #000000 !important;
+        }
+        .nav-link {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .nav-link:hover {
+            color: #FFD700;
+        }
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
         }
     </style>
 </head>
@@ -71,19 +107,19 @@
                 <div class="flex justify-between h-16">
                     <div class="flex">
                         <div class="flex-shrink-0 flex items-center">
-                            <span class="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">Blazee</span>
+                            <span class="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent clickable" @click="currentView = 'test'">Blazee</span>
                         </div>
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                             <a @click="currentView = 'test'" 
-                               :class="[currentView === 'test' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
+                               :class="[currentView === 'test' ? 'nav-link active border-yellow-500 text-white' : 'nav-link border-transparent text-gray-400 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium']">
                                 Teste de Envio
                             </a>
                             <a @click="currentView = 'schedule'"
-                               :class="[currentView === 'schedule' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
+                               :class="[currentView === 'schedule' ? 'nav-link active border-yellow-500 text-white' : 'nav-link border-transparent text-gray-400 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium']">
                                 Agendar Envio
                             </a>
                             <a @click="currentView = 'dashboard'"
-                               :class="[currentView === 'dashboard' ? 'border-yellow-500 text-white' : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer']">
+                               :class="[currentView === 'dashboard' ? 'nav-link active border-yellow-500 text-white' : 'nav-link border-transparent text-gray-400 hover:text-gray-300', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium']">
                                 Dashboard
                             </a>
                         </div>
@@ -97,7 +133,7 @@
             <!-- Test Email View -->
             <div v-if="currentView === 'test'" class="gradient-border">
                 <div class="card p-6 rounded-lg">
-                    <h3 class="text-lg leading-6 font-medium text-white">Enviar Email de Teste</h3>
+                    <h3 class="text-lg leading-6 font-medium text-white mb-4">Enviar Email de Teste</h3>
                     <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         <div class="sm:col-span-3">
                             <label class="block text-sm font-medium text-gray-300">Template</label>
@@ -254,7 +290,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <button v-if="schedule.status === 'pendente'" @click="cancelSchedule(schedule.id)" 
-                                                    class="text-red-500 hover:text-red-400">
+                                                    class="btn-secondary px-3 py-1 rounded-lg">
                                                 Cancelar
                                             </button>
                                         </td>
