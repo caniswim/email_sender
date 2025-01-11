@@ -400,15 +400,62 @@ class WebHandler(SimpleHTTPRequestHandler):
 
         elif path == '/api/schedule' and method == 'POST':
             try:
+                print(f"\n=== Novo agendamento recebido ===")
+                print(f"Data/Hora: {data.get('datetime')}")
+                print(f"Template: {data.get('template')}")
+                print(f"Lista: {data.get('list_name')}")
+                
                 if not data.get('list_name'):
-                    return {'status': 'error', 'message': 'Nome da lista não fornecido'}
+                    error_msg = 'Nome da lista não fornecido'
+                    print(f"Erro: {error_msg}")
+                    return {'status': 'error', 'message': error_msg}
                 
                 file_path = self.lists_dir / data['list_name']
                 if not file_path.exists():
-                    return {'status': 'error', 'message': 'Lista não encontrada'}
+                    error_msg = 'Lista não encontrada'
+                    print(f"Erro: {error_msg} ({file_path})")
+                    return {'status': 'error', 'message': error_msg}
+                
+                print(f"Verificando lista: {file_path}")
                 
                 # Lê a lista selecionada
-                df = pd.read_csv(file_path)
+                try:
+                    # Verifica encoding do arquivo
+                    with open(file_path, 'rb') as f:
+                        raw_data = f.read(1024)
+                        encoding = 'utf-8'
+                        try:
+                            import chardet
+                            detected = chardet.detect(raw_data)
+                            if detected['confidence'] > 0.7:
+                                encoding = detected['encoding']
+                                print(f"Encoding detectado: {encoding}")
+                        except ImportError:
+                            print("Módulo chardet não encontrado, usando UTF-8")
+                    
+                    df = pd.read_csv(file_path, encoding=encoding)
+                    print(f"Lista carregada com sucesso: {len(df)} emails")
+                    
+                    # Valida as colunas necessárias
+                    required_columns = {'EMAIL', 'NOME'}
+                    columns = {col.upper() for col in df.columns}
+                    if not required_columns.issubset(columns):
+                        missing = required_columns - columns
+                        error_msg = f"Colunas obrigatórias ausentes: {missing}"
+                        print(f"Erro: {error_msg}")
+                        return {'status': 'error', 'message': error_msg}
+                    
+                except Exception as e:
+                    error_msg = f"Erro ao ler lista: {str(e)}"
+                    print(f"Erro: {error_msg}")
+                    return {'status': 'error', 'message': error_msg}
+                
+                # Valida o template
+                template_path = Path('templates') / data['template']
+                if not template_path.exists():
+                    error_msg = 'Template não encontrado'
+                    print(f"Erro: {error_msg} ({template_path})")
+                    return {'status': 'error', 'message': error_msg}
                 
                 # Cria o agendamento
                 schedule_id = len(self.schedules) + 1
@@ -421,15 +468,20 @@ class WebHandler(SimpleHTTPRequestHandler):
                     'datetime': data['datetime'],
                     'status': 'pendente',
                     'list_path': str(file_path),
-                    'total_emails': len(df)
+                    'total_emails': len(df),
+                    'created_at': datetime.now().isoformat()
                 }
                 
                 self.schedules.append(schedule)
+                print(f"Agendamento criado com sucesso: ID {schedule_id}")
+                print(f"Total de emails: {len(df)}")
+                print(f"Data/Hora agendada: {data['datetime']}")
+                
                 return {'status': 'success', 'schedule': schedule}
                 
             except Exception as e:
                 error_msg = f"Erro ao criar agendamento: {str(e)}"
-                print(error_msg)
+                print(f"Erro crítico: {error_msg}")
                 return {'status': 'error', 'message': error_msg}
 
 def run_server(port=8000):

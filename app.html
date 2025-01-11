@@ -568,11 +568,24 @@
 
                 // Computed property para validar o formulário
                 const isScheduleFormValid = computed(() => {
-                    return scheduleForm.value.selectedList &&
+                    const isValid = scheduleForm.value.selectedList &&
                            scheduleForm.value.template &&
                            scheduleForm.value.date &&
                            scheduleForm.value.time &&
                            scheduleForm.value.subject
+                    
+                    // Log de validação
+                    if (!isValid) {
+                        const missing = []
+                        if (!scheduleForm.value.selectedList) missing.push('lista')
+                        if (!scheduleForm.value.template) missing.push('template')
+                        if (!scheduleForm.value.date) missing.push('data')
+                        if (!scheduleForm.value.time) missing.push('hora')
+                        if (!scheduleForm.value.subject) missing.push('assunto')
+                        console.log('Formulário inválido. Campos faltantes:', missing.join(', '))
+                    }
+                    
+                    return isValid
                 })
 
                 // Carrega preview de uma lista
@@ -598,13 +611,17 @@
                 // Carrega a lista de templates e listas de email
                 async function loadData() {
                     try {
+                        console.log('=== Atualizando dados ===')
                         isLoadingLists.value = true
                         
                         // Carrega templates
+                        console.log('Carregando templates...')
                         const templatesResponse = await fetch('/list_templates')
                         templates.value = await templatesResponse.json()
+                        console.log('Templates carregados:', templates.value)
 
                         // Carrega listas de email
+                        console.log('Carregando listas de email...')
                         const listsResponse = await fetch('/api/lists')
                         const listsData = await listsResponse.json()
                         if (listsData.status === 'success') {
@@ -614,11 +631,19 @@
                             console.error('Erro ao carregar listas:', listsData.message)
                             showNotification('Erro ao carregar listas de email', 'error')
                         }
+
+                        // Carrega agendamentos
+                        console.log('Carregando agendamentos...')
+                        const schedulesResponse = await fetch('/schedules')
+                        schedules.value = await schedulesResponse.json()
+                        console.log('Agendamentos carregados:', schedules.value)
+
                     } catch (error) {
                         console.error('Erro ao carregar dados:', error)
                         showNotification('Erro ao carregar dados', 'error')
                     } finally {
                         isLoadingLists.value = false
+                        console.log('=== Atualização concluída ===')
                     }
                 }
 
@@ -672,6 +697,11 @@
                             return
                         }
 
+                        console.log('=== Iniciando agendamento de envio em massa ===')
+                        console.log('Lista selecionada:', scheduleForm.value.selectedList)
+                        console.log('Template:', scheduleForm.value.template)
+                        console.log('Data/Hora:', `${scheduleForm.value.date} ${scheduleForm.value.time}:00`)
+
                         const datetime = `${scheduleForm.value.date} ${scheduleForm.value.time}:00`
                         const data = {
                             ...scheduleForm.value,
@@ -679,6 +709,7 @@
                             datetime
                         }
 
+                        console.log('Enviando requisição de agendamento...')
                         const response = await fetch('/api/schedule', {
                             method: 'POST',
                             headers: {
@@ -688,13 +719,30 @@
                         })
                         
                         const result = await response.json()
+                        console.log('Resposta do servidor:', result)
+
                         if (result.status === 'success') {
-                            showNotification('Envio agendado com sucesso!', 'success')
+                            console.log('Agendamento criado com sucesso:', result.schedule)
+                            showNotification(`Envio agendado com sucesso! ${result.schedule.total_emails} emails serão enviados.`, 'success')
+                            
+                            // Limpa o formulário
+                            scheduleForm.value = {
+                                selectedList: null,
+                                template: '',
+                                date: '',
+                                time: '',
+                                subject: '',
+                                preview: ''
+                            }
+                            
+                            // Atualiza a lista de agendamentos
                             loadData()
                         } else {
+                            console.error('Erro ao agendar envio:', result.message)
                             showNotification(result.message || 'Erro ao agendar envio', 'error')
                         }
                     } catch (error) {
+                        console.error('Erro crítico ao agendar envio:', error)
                         showNotification('Erro ao agendar envio', 'error')
                     }
                 }
