@@ -6,6 +6,7 @@ from sender import EmailDispatcher
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import os
+import psutil
 
 class EmailScheduler:
     def __init__(self, schedules):
@@ -16,9 +17,43 @@ class EmailScheduler:
         self.thread = None
         
         # Configurações de otimização
-        self.max_workers = 4  # Número de threads para envio
-        self.batch_size = 1000  # Tamanho de cada lote
+        self.max_workers = 2  # Reduzido para 2 threads (1 principal + 1 worker)
+        self.batch_size = 500  # Reduzido o tamanho do lote para melhor controle
+        self.pause_between_batches = 5  # Pausa entre lotes em segundos
+        self.memory_threshold = 80  # Limite de uso de memória em porcentagem
         self.thread_pool = ThreadPoolExecutor(max_workers=self.max_workers)
+    
+    def check_system_resources(self):
+        """Verifica recursos do sistema"""
+        memory_percent = psutil.virtual_memory().percent
+        return memory_percent < self.memory_threshold
+    
+    def process_with_rate_limit(self, batch_df, template_path, horario_envio, assunto, remetente):
+        """Processa um lote com controle de taxa"""
+        batch_file = f'temp_batch_{threading.get_ident()}.csv'
+        try:
+            # Verifica recursos antes de processar
+            if not self.check_system_resources():
+                print("Sistema sobrecarregado, aguardando recursos...")
+                time.sleep(30)  # Aguarda 30 segundos se sistema estiver sobrecarregado
+                return False
+            
+            batch_df.to_csv(batch_file, index=False)
+            result = self.dispatcher.enviar_emails(
+                lista_emails_path=batch_file,
+                template_path=template_path,
+                horario_envio=horario_envio,
+                assunto=assunto,
+                remetente=remetente
+            )
+            
+            # Pausa entre lotes para evitar sobrecarga
+            time.sleep(self.pause_between_batches)
+            return result
+            
+        finally:
+            if os.path.exists(batch_file):
+                os.remove(batch_file)
     
     def start(self):
         """Inicia o scheduler em uma thread separada"""
@@ -62,24 +97,6 @@ class EmailScheduler:
             
             time.sleep(60)
     
-    def _process_batch(self, batch_df, template_path, horario_envio, assunto, remetente):
-        """Processa um lote de emails"""
-        # Cria um arquivo temporário para o lote
-        batch_file = f'temp_batch_{threading.get_ident()}.csv'
-        try:
-            batch_df.to_csv(batch_file, index=False)
-            return self.dispatcher.enviar_emails(
-                lista_emails_path=batch_file,
-                template_path=template_path,
-                horario_envio=horario_envio,
-                assunto=assunto,
-                remetente=remetente
-            )
-        finally:
-            # Limpa o arquivo temporário
-            if os.path.exists(batch_file):
-                os.remove(batch_file)
-    
     def _process_schedule(self, schedule):
         """Processa um agendamento"""
         try:
@@ -109,18 +126,18 @@ class EmailScheduler:
                 schedule['status'] = 'concluido' if result else 'erro'
             
             else:  # type == 'mass'
-                # Processa em lotes usando múltiplas threads
+                # Processa em lotes menores
                 df = pd.read_csv('lista_completa.csv')
                 total_rows = len(df)
                 futures = []
                 
-                # Divide em lotes e submete para o pool de threads
+                # Processa em lotes menores
                 for start in range(0, total_rows, self.batch_size):
                     end = min(start + self.batch_size, total_rows)
                     batch_df = df.iloc[start:end]
                     
                     future = self.thread_pool.submit(
-                        self._process_batch,
+                        self.process_with_rate_limit,
                         batch_df,
                         f"templates/{schedule['template']}",
                         horario_envio,
@@ -128,9 +145,16 @@ class EmailScheduler:
                         'Blazee <contato@useblazee.com.br>'
                     )
                     futures.append(future)
+                    
+                    # Aguarda o lote atual terminar antes de iniciar o próximo
+                    # Isso evita sobrecarga de memória e CPU
+                    result = future.result()
+                    if not result:
+                        print(f"Falha no lote {start}-{end}, pausando...")
+                        time.sleep(30)  # Pausa maior em caso de falha
                 
-                # Aguarda todos os lotes terminarem
-                results = [future.result() for future in futures]
+                # Verifica resultados
+                results = [f.result() for f in futures]
                 schedule['status'] = 'concluido' if all(results) else 'erro'
         
         except Exception as e:

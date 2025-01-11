@@ -36,9 +36,22 @@ echo "=== Inicializando Sistema de Envio de Emails ==="
 
 # Verifica se o Python está instalado
 if ! command -v python3 &> /dev/null; then
-    echo "Python 3 não encontrado. Por favor, instale o Python 3."
-    exit 1
+    echo "Python 3 não encontrado. Instalando..."
+    sudo apt-get update
+    sudo apt-get install -y python3 python3-pip python3-venv
 fi
+
+# Instala dependências do sistema necessárias
+echo "Instalando dependências do sistema..."
+sudo apt-get update
+sudo apt-get install -y \
+    python3-dev \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    python3-setuptools \
+    python3-wheel \
+    python3-psutil
 
 # Ativa ou cria o ambiente virtual
 echo "Ativando ambiente virtual..."
@@ -47,10 +60,24 @@ if [ ! -d "venv" ]; then
 fi
 source venv/bin/activate
 
-# Instala as dependências
-echo "Instalando dependências..."
+# Instala as dependências Python
+echo "Instalando dependências Python..."
 pip install --upgrade pip
-pip install pandas pytz dkimpy tenacity
+pip install \
+    pandas \
+    pytz \
+    dkimpy \
+    tenacity \
+    psutil \
+    python-dateutil \
+    requests \
+    chardet \
+    urllib3 \
+    certifi \
+    idna \
+    numpy \
+    six \
+    python-dotenv
 
 # Verifica se a pasta templates existe
 if [ ! -d "templates" ]; then
@@ -66,6 +93,12 @@ if [ ! "$(ls -A templates/*.html 2>/dev/null)" ]; then
     exit 1
 fi
 
+# Verifica e cria diretório DKIM se não existir
+if [ ! -d "/etc/dkim" ]; then
+    echo "Criando diretório DKIM..."
+    sudo mkdir -p /etc/dkim
+fi
+
 # Verifica se a chave DKIM existe e tem as permissões corretas
 if [ ! -f "/etc/dkim/private.key" ]; then
     echo "Chave DKIM não encontrada em /etc/dkim/private.key"
@@ -78,6 +111,14 @@ if [ "$(stat -c %a /etc/dkim/private.key)" != "600" ]; then
     echo "Ajustando permissões da chave DKIM..."
     sudo chmod 600 /etc/dkim/private.key
 fi
+
+# Verifica e ajusta permissões dos arquivos de log
+touch email_dispatcher.log
+chmod 666 email_dispatcher.log
+
+# Verifica e ajusta permissões do arquivo de estatísticas
+touch email_stats.json
+chmod 666 email_stats.json
 
 if [ "$MODE" = "tui" ]; then
     echo "Iniciando interface TUI..."
