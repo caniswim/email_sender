@@ -163,31 +163,104 @@ class WebHandler(SimpleHTTPRequestHandler):
                     return
             elif self.path == '/api/schedule':
                 try:
-                    # Adiciona o agendamento à lista
+                    print(f"\n=== Novo agendamento recebido ===")
+                    print(f"Data/Hora: {data.get('datetime')}")
+                    print(f"Template: {data.get('template')}")
+                    print(f"Lista: {data.get('list_name')}")
+                    
+                    if not data.get('list_name'):
+                        error_msg = 'Nome da lista não fornecido'
+                        print(f"Erro: {error_msg}")
+                        self.send_error_response(error_msg)
+                        return
+                    
+                    file_path = self.lists_dir / data['list_name']
+                    if not file_path.exists():
+                        error_msg = 'Lista não encontrada'
+                        print(f"Erro: {error_msg} ({file_path})")
+                        self.send_error_response(error_msg)
+                        return
+                    
+                    print(f"Verificando lista: {file_path}")
+                    
+                    # Lê a lista selecionada
+                    try:
+                        # Verifica encoding do arquivo
+                        with open(file_path, 'rb') as f:
+                            raw_data = f.read(1024)
+                            encoding = 'utf-8'
+                            try:
+                                import chardet
+                                detected = chardet.detect(raw_data)
+                                if detected['confidence'] > 0.7:
+                                    encoding = detected['encoding']
+                                    print(f"Encoding detectado: {encoding}")
+                            except ImportError:
+                                print("Módulo chardet não encontrado, usando UTF-8")
+                        
+                        df = pd.read_csv(file_path, encoding=encoding)
+                        print(f"Lista carregada com sucesso: {len(df)} emails")
+                        
+                        # Valida as colunas necessárias
+                        required_columns = {'EMAIL', 'NOME'}
+                        columns = {col.upper() for col in df.columns}
+                        if not required_columns.issubset(columns):
+                            missing = required_columns - columns
+                            error_msg = f"Colunas obrigatórias ausentes: {missing}"
+                            print(f"Erro: {error_msg}")
+                            self.send_error_response(error_msg)
+                            return
+                        
+                    except Exception as e:
+                        error_msg = f"Erro ao ler lista: {str(e)}"
+                        print(f"Erro: {error_msg}")
+                        self.send_error_response(error_msg)
+                        return
+                    
+                    # Valida o template
+                    template_path = Path('templates') / data['template']
+                    if not template_path.exists():
+                        error_msg = 'Template não encontrado'
+                        print(f"Erro: {error_msg} ({template_path})")
+                        self.send_error_response(error_msg)
+                        return
+                    
+                    # Cria o agendamento
                     schedule_id = len(self.schedules) + 1
                     schedule = {
                         'id': schedule_id,
                         'type': 'mass',
                         'template': data['template'],
                         'subject': data['subject'],
-                        'preview': data['preview'],
+                        'preview': data.get('preview', ''),
                         'datetime': data['datetime'],
-                        'status': 'pendente'
+                        'status': 'pendente',
+                        'list_path': str(file_path),
+                        'total_emails': len(df),
+                        'created_at': datetime.now().isoformat()
                     }
-                    self.schedules.append(schedule)
                     
+                    self.schedules.append(schedule)
+                    print(f"Agendamento criado com sucesso: ID {schedule_id}")
+                    print(f"Total de emails: {len(df)}")
+                    print(f"Data/Hora agendada: {data['datetime']}")
+                    
+                    # Envia resposta de sucesso
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
                     self.send_header('Access-Control-Allow-Origin', '*')
                     self.end_headers()
-                    self.wfile.write(json.dumps({'success': True, 'schedule': schedule}).encode())
+                    response = {
+                        'status': 'success',
+                        'schedule': schedule
+                    }
+                    self.wfile.write(json.dumps(response).encode())
                     return
-                
+                    
                 except Exception as e:
-                    self.send_response(500)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
+                    error_msg = f"Erro ao criar agendamento: {str(e)}"
+                    print(f"Erro crítico: {error_msg}")
+                    self.send_error_response(error_msg)
                     return
             elif self.path.startswith('/cancel_schedule/'):
                 try:
@@ -408,13 +481,15 @@ class WebHandler(SimpleHTTPRequestHandler):
                 if not data.get('list_name'):
                     error_msg = 'Nome da lista não fornecido'
                     print(f"Erro: {error_msg}")
-                    return {'status': 'error', 'message': error_msg}
+                    self.send_error_response(error_msg)
+                    return
                 
                 file_path = self.lists_dir / data['list_name']
                 if not file_path.exists():
                     error_msg = 'Lista não encontrada'
                     print(f"Erro: {error_msg} ({file_path})")
-                    return {'status': 'error', 'message': error_msg}
+                    self.send_error_response(error_msg)
+                    return
                 
                 print(f"Verificando lista: {file_path}")
                 
@@ -443,19 +518,22 @@ class WebHandler(SimpleHTTPRequestHandler):
                         missing = required_columns - columns
                         error_msg = f"Colunas obrigatórias ausentes: {missing}"
                         print(f"Erro: {error_msg}")
-                        return {'status': 'error', 'message': error_msg}
+                        self.send_error_response(error_msg)
+                        return
                     
                 except Exception as e:
                     error_msg = f"Erro ao ler lista: {str(e)}"
                     print(f"Erro: {error_msg}")
-                    return {'status': 'error', 'message': error_msg}
+                    self.send_error_response(error_msg)
+                    return
                 
                 # Valida o template
                 template_path = Path('templates') / data['template']
                 if not template_path.exists():
                     error_msg = 'Template não encontrado'
                     print(f"Erro: {error_msg} ({template_path})")
-                    return {'status': 'error', 'message': error_msg}
+                    self.send_error_response(error_msg)
+                    return
                 
                 # Cria o agendamento
                 schedule_id = len(self.schedules) + 1
@@ -477,12 +555,35 @@ class WebHandler(SimpleHTTPRequestHandler):
                 print(f"Total de emails: {len(df)}")
                 print(f"Data/Hora agendada: {data['datetime']}")
                 
-                return {'status': 'success', 'schedule': schedule}
+                # Envia resposta de sucesso
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                response = {
+                    'status': 'success',
+                    'schedule': schedule
+                }
+                self.wfile.write(json.dumps(response).encode())
+                return
                 
             except Exception as e:
                 error_msg = f"Erro ao criar agendamento: {str(e)}"
                 print(f"Erro crítico: {error_msg}")
-                return {'status': 'error', 'message': error_msg}
+                self.send_error_response(error_msg)
+                return
+
+    def send_error_response(self, message):
+        """Helper method to send error responses"""
+        self.send_response(200)  # Mantém 200 para que o frontend possa ler a mensagem
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        response = {
+            'status': 'error',
+            'message': message
+        }
+        self.wfile.write(json.dumps(response).encode())
 
 def run_server(port=8000):
     server_address = ('', port)

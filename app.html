@@ -709,7 +709,7 @@
                             datetime
                         }
 
-                        console.log('Enviando requisição de agendamento...')
+                        console.log('Enviando requisição de agendamento:', data)
                         const response = await fetch('/api/schedule', {
                             method: 'POST',
                             headers: {
@@ -718,10 +718,14 @@
                             body: JSON.stringify(data)
                         })
                         
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`)
+                        }
+                        
                         const result = await response.json()
                         console.log('Resposta do servidor:', result)
 
-                        if (result.status === 'success') {
+                        if (result.status === 'success' && result.schedule) {
                             console.log('Agendamento criado com sucesso:', result.schedule)
                             showNotification(`Envio agendado com sucesso! ${result.schedule.total_emails} emails serão enviados.`, 'success')
                             
@@ -738,12 +742,13 @@
                             // Atualiza a lista de agendamentos
                             loadData()
                         } else {
-                            console.error('Erro ao agendar envio:', result.message)
-                            showNotification(result.message || 'Erro ao agendar envio', 'error')
+                            const errorMessage = result.message || 'Erro desconhecido ao agendar envio'
+                            console.error('Erro ao agendar envio:', errorMessage)
+                            showNotification(errorMessage, 'error')
                         }
                     } catch (error) {
                         console.error('Erro crítico ao agendar envio:', error)
-                        showNotification('Erro ao agendar envio', 'error')
+                        showNotification(`Erro ao agendar envio: ${error.message}`, 'error')
                     }
                 }
 
