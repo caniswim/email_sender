@@ -233,7 +233,13 @@ class WebHandler(SimpleHTTPRequestHandler):
             if (cache_key in self._lists_cache and 
                 current_time - self._last_cache_update < self.cache_ttl):
                 print(f"Usando cache para {file_path.name}")
-                return self._lists_cache[cache_key]
+                cached_info = self._lists_cache[cache_key]
+                # Retorna apenas informações essenciais do cache
+                return {
+                    'name': cached_info['name'],
+                    'count': cached_info['count'],
+                    'modified': cached_info['modified']
+                }
             
             print(f"Lendo arquivo {file_path.name}")
             
@@ -276,18 +282,25 @@ class WebHandler(SimpleHTTPRequestHandler):
                 print(f"Colunas ausentes em {file_path.name}: {missing}")
                 return None
             
-            # Cria o objeto de informações
-            info = {
+            # Cria o objeto de informações (versão completa para cache)
+            full_info = {
                 'name': file_path.name,
                 'count': len(df),
                 'modified': datetime.fromtimestamp(file_path.stat().st_mtime).isoformat(),
                 'columns': list(df.columns),
-                'preview': df.head(3).to_dict('records')
+                'encoding': encoding
             }
             
-            # Atualiza o cache da classe
-            self.__class__._lists_cache[cache_key] = info
+            # Atualiza o cache da classe com informações completas
+            self.__class__._lists_cache[cache_key] = full_info
             self.__class__._last_cache_update = current_time
+            
+            # Retorna apenas informações essenciais
+            info = {
+                'name': full_info['name'],
+                'count': full_info['count'],
+                'modified': full_info['modified']
+            }
             
             print(f"Arquivo {file_path.name} processado com sucesso")
             return info
@@ -338,23 +351,36 @@ class WebHandler(SimpleHTTPRequestHandler):
                 if not file_path.exists():
                     return {'status': 'error', 'message': 'Lista não encontrada'}
                 
-                # Usa o mesmo método de leitura do get_list_info
-                with open(file_path, 'rb') as f:
-                    raw_data = f.read()
-                    encoding = 'utf-8'
-                    try:
-                        import chardet
-                        detected = chardet.detect(raw_data)
-                        if detected['confidence'] > 0.7:
-                            encoding = detected['encoding']
-                    except ImportError:
-                        pass
+                # Verifica se tem no cache
+                cache_key = str(file_path)
+                if cache_key in self._lists_cache:
+                    encoding = self._lists_cache[cache_key].get('encoding', 'utf-8')
+                else:
+                    # Detecta encoding se não estiver em cache
+                    with open(file_path, 'rb') as f:
+                        raw_data = f.read(1024)  # Lê apenas o início do arquivo
+                        encoding = 'utf-8'
+                        try:
+                            import chardet
+                            detected = chardet.detect(raw_data)
+                            if detected['confidence'] > 0.7:
+                                encoding = detected['encoding']
+                        except:
+                            pass
 
-                df = pd.read_csv(file_path, encoding=encoding)
-                preview_rows = df.head(10).to_dict('records')
-                return {'status': 'success', 'rows': preview_rows}
+                # Lê apenas as primeiras linhas do arquivo
+                df = pd.read_csv(file_path, encoding=encoding, nrows=5)
+                preview_rows = df.to_dict('records')
+                
+                return {
+                    'status': 'success',
+                    'preview': preview_rows,
+                    'total_rows': sum(1 for _ in open(file_path, encoding=encoding))
+                }
             except Exception as e:
-                return {'status': 'error', 'message': str(e)}
+                error_msg = f"Erro ao gerar preview: {str(e)}"
+                print(error_msg)
+                return {'status': 'error', 'message': error_msg}
 
         elif path == '/api/select_list' and method == 'POST':
             try:

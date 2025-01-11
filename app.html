@@ -277,11 +277,19 @@
                                             Lista selecionada ✓
                                         </span>
                                     </div>
-                                    <div v-if="scheduleForm.selectedList && scheduleForm.selectedList.preview" class="mt-4">
-                                        <p class="text-sm font-medium text-gray-300 mb-2">Preview dos primeiros registros:</p>
-                                        <div class="bg-[#1a1a1a] rounded-md p-2 text-sm text-gray-400">
-                                            <div v-for="(row, index) in scheduleForm.selectedList.preview" :key="index" class="mb-1">
-                                                {{ row.EMAIL }} - {{ row.NOME }}
+                                    <div v-if="scheduleForm.selectedList" class="mt-4">
+                                        <button @click="loadPreview(scheduleForm.selectedList.name)" 
+                                                class="text-sm text-yellow-500 hover:text-yellow-400 focus:outline-none">
+                                            Ver preview da lista
+                                        </button>
+                                        <div v-if="previewData" class="mt-2">
+                                            <p class="text-sm font-medium text-gray-300 mb-2">
+                                                Preview dos primeiros registros (total: {{ previewData.total_rows }} emails):
+                                            </p>
+                                            <div class="bg-[#1a1a1a] rounded-md p-2 text-sm text-gray-400">
+                                                <div v-for="(row, index) in previewData.preview" :key="index" class="mb-1">
+                                                    {{ row.EMAIL }} - {{ row.NOME }}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -429,6 +437,7 @@
                 const lists = ref([])
                 const notification = ref({ show: false, message: '', type: 'success' })
                 const schedules = ref([])
+                const previewData = ref(null)
 
                 const testForm = ref({
                     template: '',
@@ -449,6 +458,23 @@
                     subject: '',
                     preview: ''
                 })
+
+                // Carrega preview de uma lista
+                async function loadPreview(listName) {
+                    try {
+                        previewData.value = null
+                        const response = await fetch(`/api/preview_list/${listName}`)
+                        const data = await response.json()
+                        if (data.status === 'success') {
+                            previewData.value = data
+                        } else {
+                            showNotification('Erro ao carregar preview: ' + data.message, 'error')
+                        }
+                    } catch (error) {
+                        console.error('Erro ao carregar preview:', error)
+                        showNotification('Erro ao carregar preview', 'error')
+                    }
+                }
 
                 // Carrega a lista de templates e listas de email
                 async function loadData() {
@@ -606,11 +632,13 @@
                     testForm,
                     scheduleForm,
                     notification,
+                    previewData,
                     sendTestEmail,
                     scheduleEmails,
                     cancelSchedule,
                     getStatusBadgeClass,
-                    getStatusText
+                    getStatusText,
+                    loadPreview
                 }
             }
         }).mount('#app')
