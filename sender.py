@@ -23,9 +23,9 @@ class EmailDispatcher:
         self.timezone = pytz.timezone('America/Sao_Paulo')
         
         # Configurações anti-spam
-        self.rate_limit = 5  # Reduzido para 5 emails por segundo
-        self.batch_size = 100  # Envios em lotes
-        self.batch_interval = 60  # 60 segundos entre lotes
+        self.rate_limit = 8  # 8 emails por segundo
+        self.batch_size = 250  # Lotes de 250 emails
+        self.batch_interval = 1  # 1 segundo entre lotes
         
         # Configuração do servidor SMTP
         self.smtp_config = {
