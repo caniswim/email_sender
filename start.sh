@@ -12,6 +12,14 @@ show_help() {
     echo "Se nenhuma opção for fornecida, inicia o sistema em modo web."
 }
 
+# Verifica se já existe um processo rodando na porta 8000
+check_running() {
+    if netstat -tuln | grep -q ":8000 "; then
+        echo "ERRO: Já existe um processo rodando na porta 8000"
+        exit 1
+    fi
+}
+
 # Processa os argumentos da linha de comando
 MODE="web"
 for arg in "$@"; do
@@ -103,8 +111,16 @@ if [ "$MODE" = "tui" ]; then
     echo "Iniciando interface TUI..."
     python3 tui.py
 else
-    # Inicia o servidor web
-    echo "Iniciando servidor web..."
+    # Verifica se já existe uma instância rodando
+    check_running
+
+    # Inicia o servidor web em background
+    echo "Iniciando servidor web em background..."
     echo "Acesse http://localhost:8000 para usar o sistema"
-    python3 server.py
+    echo "Logs disponíveis em nohup.out"
+    nohup python3 server.py > nohup.out 2>&1 &
+    
+    # Salva o PID para referência
+    echo $! > server.pid
+    echo "Servidor iniciado com PID: $(cat server.pid)"
 fi 

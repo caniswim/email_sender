@@ -1,0 +1,417 @@
+{
+  "checkout_sessions": {
+    "session_1737121123907_s8s5zu8zuhp": {
+      "activity": {
+        "current_step": "payment",
+        "is_active": false,
+        "last_activity": 1737121161488
+      },
+      "address": {
+        "cep": "06706-062",
+        "city": "Cotia",
+        "complement": "",
+        "lastUpdate": 1737121140056,
+        "neighborhood": "São Paulo II",
+        "number": "19",
+        "state": "SP",
+        "street": "Rua Antônio de Camargo"
+      },
+      "cart": {
+        "discount": {
+          "amount": "83,70",
+          "text": "10% OFF (3 ou mais itens)"
+        },
+        "itemCount": 1,
+        "items": [
+          {
+            "id": 87273,
+            "image": {
+              "srcset": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg 1000w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-300x300.jpg 300w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-150x150.jpg 150w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-768x768.jpg 768w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-40x40.jpg 40w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-132x132.jpg 132w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-990x990.jpg 990w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-441x441.jpg 441w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-800x800.jpg 800w",
+              "url": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg"
+            },
+            "name": "Calça de Linho Old Money - Santorini",
+            "originalUnitPrice": "379,00",
+            "quantity": 3,
+            "totalPrice": "837,00",
+            "unitPrice": "279,00",
+            "variationId": 87275
+          }
+        ],
+        "lastUpdate": 1737121145974,
+        "recoveryUrl": "https://blazeewear.com/c/X87MJV",
+        "subtotal": "837,00",
+        "total": "753,30"
+      },
+      "contact": {
+        "cpf": "510.649.238-60",
+        "email": "brunnovert@gmail.com",
+        "lastUpdate": 1737121140055,
+        "name": "Brunno Vert",
+        "phone": "(11) 95588-5000"
+      },
+      "created_at": 1737121124605,
+      "language": "en-US",
+      "lastUpdate": 1737121161564,
+      "location": {
+        "asn": "AS28573",
+        "city": "Santos",
+        "continent_code": "SA",
+        "country": "BR",
+        "country_area": 8511965,
+        "country_calling_code": "+55",
+        "country_capital": "Brasilia",
+        "country_code": "BR",
+        "country_code_iso3": "BRA",
+        "country_name": "Brazil",
+        "country_population": 209469333,
+        "country_tld": ".br",
+        "currency": "BRL",
+        "currency_name": "Real",
+        "in_eu": false,
+        "ip": "2804:14d:7e8c:8678:a971:6c16:92ef:e950",
+        "languages": "pt-BR,es,en,fr",
+        "latitude": -23.9549,
+        "longitude": -46.2238,
+        "network": "2804:14d:7e8c:8000::/49",
+        "org": "Claro NXT Telecomunicacoes Ltda",
+        "postal": "11400",
+        "region": "São Paulo",
+        "region_code": "SP",
+        "timezone": "America/Sao_Paulo",
+        "utc_offset": "-0300",
+        "version": "IPv6"
+      },
+      "order": {
+        "order_id": "104145",
+        "order_status": "pending",
+        "payment": {
+          "copy_paste": "00020101021126950014BR.GOV.BCB.PIX2573spi.dev.cloud.itau.com.br/documentos/198e49c5-2330-4ad7-9d0b-967c7b5371225204000053039865802BR5923PMD Gotham NegA cios ME6009SAO PAULO62410503***50300017BR.GOV.BCB.BRCODE01051.0.063040866",
+          "expiration_date": "17/01/2025 14:09",
+          "qrcode_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPoAAAD6AQAAAACgl2eQAAADCUlEQVR4Xu2XUW4cIRBE6YvA/W+Ro8BFIPWKsWU5kpWPbOVn8SaZhWep1F1dTNr5ef1q33e+rTdw1xu466+A2VqtXbuP3etMPY9zlrdjwPLnrNm1NceaNXtv426nAOliqw5K+1io3IBhoFyZsWuaE/UfgM1h0xpzTMqUBfRxXZB2ONylhy/Nej0wMe2fi+0Y4KUend1omcZHR7vufgigNMzLEDXFbL63Pj6bFQBkld57MS0KkEWfdhOg3sWAI0mYRUIJMkvGwq5VCJhWtwkwAWoXIcJvjRxw9WnL/YKQWxejPGKAxvZgEHWoBKlhErztmBhgafaMXCtqWKVDJQYc2oNndY5llncEspUDlOFFrXRA23QiUl9jwB7aPvhkoE5UGeQxBlyFLEaXCbrW+XT16wGe9Kcsk25JsH/oWgjw9PbGge+ysdAtgRAhwNm1iW+rXN5pV2oMuEaVTHlXL30iFaySXU+hAsBGpJulzAAclE3geEQGAIzCfcKrFv7VEVna3LAQMIcNyiue7lKSg1ppQ0OcAshPWWT4amNtarb4GgN8qcmwvlAk8qNRtC4GuEVKLn13fKlUUuxepQC+C9NWJ9ZlHRu5iLMUMPGrdhkZLKwLpvQfoXvXhoCDzsZP0beFgagefgkC0yWiVbxqFBmmn/Xh6tcDyxnGtUpskJ/Mb0dpDGBQnSJSJ7NKHYahaR+Fej3wWMSqMI/+Utmkmm6lgCewfICwmyPdHg4BGtRBkHp+m29VqbPyHCCPKL+pFzpJUiZIep9CBQAnOZ+nQwu3TP8bAybjqvJgkyI+DjLF07gQ4M5wXEibvtod5u0RGQDYKhhZFX3ca9hYuRID9GbDidql+kgt/eKCpYMpwGaVIAZGAaKObZyL1BygxTMgMUKXuOEXbQwBFEWaOt4tusQW/eKXQsDic0vE+17njA4SrjFg8n43XCwbZQsdfooCC4eSJJoXJVkRYJ/NSgHEOBIJ8wtYeAzQh0HpCjLop3GDeU4BtEU2kUpXR1YhQqlXDvhxvYG73sBd/wD4Df7+v4eqIoYgAAAAAElFTkSuQmCC"
+        },
+        "payment_method": "pix"
+      },
+      "platform": "Linux x86_64",
+      "start_time": 1737121123907,
+      "updated_at": "2025-01-17T14:13:54.508Z",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0"
+    },
+    "session_1737125740936_l9wcbzuozdd": {
+      "activity": {
+        "current_step": "payment",
+        "is_active": false,
+        "last_activity": 1737125795396
+      },
+      "address": {
+        "cep": "06706-062",
+        "city": "Cotia",
+        "complement": "",
+        "lastUpdate": 1737125770837,
+        "neighborhood": "São Paulo II",
+        "number": "18",
+        "state": "SP",
+        "street": "Rua Antônio de Camargo"
+      },
+      "cart": {
+        "discount": {
+          "amount": "83,70",
+          "text": "10% OFF (3 ou mais itens)"
+        },
+        "itemCount": 1,
+        "items": [
+          {
+            "id": 87273,
+            "image": {
+              "srcset": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg 1000w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-300x300.jpg 300w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-150x150.jpg 150w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-768x768.jpg 768w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-40x40.jpg 40w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-132x132.jpg 132w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-990x990.jpg 990w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-441x441.jpg 441w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-800x800.jpg 800w",
+              "url": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg"
+            },
+            "name": "Calça de Linho Old Money - Santorini",
+            "originalUnitPrice": "379,00",
+            "quantity": 3,
+            "totalPrice": "837,00",
+            "unitPrice": "279,00",
+            "variationId": 87275
+          }
+        ],
+        "lastUpdate": 1737125788099,
+        "recoveryUrl": "https://blazeewear.com/c/KVB7GJ",
+        "subtotal": "837,00",
+        "total": "753,30"
+      },
+      "contact": {
+        "cpf": "510.649.238-60",
+        "email": "sabaomacaco@yahoo.com",
+        "lastUpdate": 1737125770836,
+        "name": "Janio Turbo",
+        "phone": "(11) 95588-5000"
+      },
+      "created_at": 1737125741494,
+      "language": "en-US",
+      "lastUpdate": 1737125795520,
+      "location": {
+        "asn": "AS28573",
+        "city": "Santos",
+        "continent_code": "SA",
+        "country": "BR",
+        "country_area": 8511965,
+        "country_calling_code": "+55",
+        "country_capital": "Brasilia",
+        "country_code": "BR",
+        "country_code_iso3": "BRA",
+        "country_name": "Brazil",
+        "country_population": 209469333,
+        "country_tld": ".br",
+        "currency": "BRL",
+        "currency_name": "Real",
+        "in_eu": false,
+        "ip": "2804:14d:7e8c:8678:a971:6c16:92ef:e950",
+        "languages": "pt-BR,es,en,fr",
+        "latitude": -23.9549,
+        "longitude": -46.2238,
+        "network": "2804:14d:7e8c:8000::/49",
+        "org": "Claro NXT Telecomunicacoes Ltda",
+        "postal": "11400",
+        "region": "São Paulo",
+        "region_code": "SP",
+        "timezone": "America/Sao_Paulo",
+        "utc_offset": "-0300",
+        "version": "IPv6"
+      },
+      "order": {
+        "order_id": "104147",
+        "order_status": "processing",
+        "payment_method": "credit_card"
+      },
+      "platform": "Linux x86_64",
+      "start_time": 1737125740936,
+      "updated_at": "2025-01-17T14:56:35.844Z",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0"
+    },
+    "session_1737125846122_ukz3soo5r6": {
+      "activity": {
+        "current_step": "shipping",
+        "is_active": true,
+        "last_activity": 1737127259342
+      },
+      "address": {
+        "cep": "06706-060",
+        "city": "Cotia",
+        "complement": "",
+        "lastUpdate": 1737125935897,
+        "neighborhood": "São Paulo II",
+        "number": "44",
+        "state": "SP",
+        "street": "Rua Duarte da Costa"
+      },
+      "cart": {
+        "discount": {
+          "amount": "83,70",
+          "text": "10% OFF (3 ou mais itens)"
+        },
+        "itemCount": 1,
+        "items": [
+          {
+            "id": 87273,
+            "image": {
+              "srcset": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg 1000w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-300x300.jpg 300w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-150x150.jpg 150w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-768x768.jpg 768w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-40x40.jpg 40w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-132x132.jpg 132w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-990x990.jpg 990w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-441x441.jpg 441w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-800x800.jpg 800w",
+              "url": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg"
+            },
+            "name": "Calça de Linho Old Money - Santorini",
+            "originalUnitPrice": "379,00",
+            "quantity": 3,
+            "totalPrice": "837,00",
+            "unitPrice": "279,00",
+            "variationId": 87275
+          }
+        ],
+        "lastUpdate": 1737126395010,
+        "recoveryUrl": "https://blazeewear.com/c/83Z64V",
+        "subtotal": "837,00",
+        "total": "753,30"
+      },
+      "contact": {
+        "cpf": "176.012.958-50",
+        "email": "joao.silva@gmail.com",
+        "lastUpdate": 1737126394034,
+        "name": "Agora Nelson",
+        "phone": "(11) 45723-8957"
+      },
+      "created_at": 1737125846760,
+      "language": "en-US",
+      "lastUpdate": 1737127259421,
+      "location": {
+        "asn": "AS28573",
+        "city": "Santos",
+        "continent_code": "SA",
+        "country": "BR",
+        "country_area": 8511965,
+        "country_calling_code": "+55",
+        "country_capital": "Brasilia",
+        "country_code": "BR",
+        "country_code_iso3": "BRA",
+        "country_name": "Brazil",
+        "country_population": 209469333,
+        "country_tld": ".br",
+        "currency": "BRL",
+        "currency_name": "Real",
+        "in_eu": false,
+        "ip": "2804:14d:7e8c:8678:a971:6c16:92ef:e950",
+        "languages": "pt-BR,es,en,fr",
+        "latitude": -23.9549,
+        "longitude": -46.2238,
+        "network": "2804:14d:7e8c:8000::/49",
+        "org": "Claro NXT Telecomunicacoes Ltda",
+        "postal": "11400",
+        "region": "São Paulo",
+        "region_code": "SP",
+        "timezone": "America/Sao_Paulo",
+        "utc_offset": "-0300",
+        "version": "IPv6"
+      },
+      "platform": "Linux x86_64",
+      "start_time": 1737125846122,
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0"
+    },
+    "session_1737128737733_5t2l294wks9": {
+      "activity": {
+        "current_step": "payment",
+        "is_active": false,
+        "last_activity": 1737128817110
+      },
+      "address": {
+        "cep": "06706-060",
+        "city": "Cotia",
+        "complement": "",
+        "lastUpdate": 1737128804107,
+        "neighborhood": "São Paulo II",
+        "number": "12",
+        "state": "SP",
+        "street": "Rua Duarte da Costa"
+      },
+      "cart": {
+        "discount": {
+          "amount": "83,70",
+          "text": "10% OFF (3 ou mais itens)"
+        },
+        "itemCount": 1,
+        "items": [
+          {
+            "id": 87273,
+            "image": {
+              "srcset": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg 1000w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-300x300.jpg 300w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-150x150.jpg 150w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-768x768.jpg 768w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-40x40.jpg 40w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-132x132.jpg 132w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-990x990.jpg 990w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-441x441.jpg 441w, https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1-800x800.jpg 800w",
+              "url": "https://blazeewear.com/wp-content/uploads/2024/09/1_3e3a040c-7b6b-49b7-8d52-9b2c4cc5b4d1.jpg"
+            },
+            "name": "Calça de Linho Old Money - Santorini",
+            "originalUnitPrice": "379,00",
+            "quantity": 3,
+            "totalPrice": "837,00",
+            "unitPrice": "279,00",
+            "variationId": 87275
+          }
+        ],
+        "lastUpdate": 1737128808669,
+        "recoveryUrl": "https://blazeewear.com/c/GFU46Y",
+        "subtotal": "837,00",
+        "total": "753,30"
+      },
+      "contact": {
+        "cpf": "510.649.238-60",
+        "email": "brunno@gmail.com",
+        "lastUpdate": 1737128804105,
+        "name": "Teste Boleto",
+        "phone": "(11) 95588-5000"
+      },
+      "created_at": 1737128738553,
+      "language": "en-US",
+      "lastUpdate": 1737128817188,
+      "location": {
+        "asn": "AS28573",
+        "city": "Santos",
+        "continent_code": "SA",
+        "country": "BR",
+        "country_area": 8511965,
+        "country_calling_code": "+55",
+        "country_capital": "Brasilia",
+        "country_code": "BR",
+        "country_code_iso3": "BRA",
+        "country_name": "Brazil",
+        "country_population": 209469333,
+        "country_tld": ".br",
+        "currency": "BRL",
+        "currency_name": "Real",
+        "in_eu": false,
+        "ip": "2804:14d:7e8c:8678:a971:6c16:92ef:e950",
+        "languages": "pt-BR,es,en,fr",
+        "latitude": -23.9549,
+        "longitude": -46.2238,
+        "network": "2804:14d:7e8c:8000::/49",
+        "org": "Claro NXT Telecomunicacoes Ltda",
+        "postal": "11400",
+        "region": "São Paulo",
+        "region_code": "SP",
+        "timezone": "America/Sao_Paulo",
+        "utc_offset": "-0300",
+        "version": "IPv6"
+      },
+      "order": {
+        "order_id": "104149",
+        "order_status": "paid",
+        "payment": {
+          "code": "34191570070010568150600520610007286380000010001",
+          "url": "https://dev-boletos.appmax.com.br/boleto/678a7b6caeaf6a322f418d0d"
+        },
+        "payment_method": "boleto"
+      },
+      "platform": "Linux x86_64",
+      "start_time": 1737128737733,
+      "updated_at": "2025-01-17T15:46:57.379Z",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0"
+    },
+    "session_1737131213708_dyqrrn6zlxj": {
+      "activity": {
+        "current_step": "shipping",
+        "is_active": true,
+        "last_activity": 1737131244734
+      },
+      "cart": {
+        "discount": {
+          "amount": "0,00",
+          "text": "5% OFF (2 itens)"
+        },
+        "itemCount": 1,
+        "items": [
+          {
+            "id": 87528,
+            "image": {
+              "srcset": "https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4.png 800w, https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4-300x300.png 300w, https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4-150x150.png 150w, https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4-768x768.png 768w, https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4-40x40.png 40w, https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4-132x132.png 132w, https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4-441x441.png 441w",
+              "url": "https://blazeewear.com/wp-content/uploads/2024/09/6_06e263ab-9ace-408d-b77a-663111a9c9c4.png"
+            },
+            "name": "Camisa de Linho Manga Longa Old Money - Greece",
+            "originalUnitPrice": "429,00",
+            "quantity": 1,
+            "totalPrice": "329,00",
+            "unitPrice": "329,00",
+            "variationId": 87543
+          }
+        ],
+        "lastUpdate": 1737131218477,
+        "recoveryUrl": "https://blazeewear.com/c/QGVX83",
+        "subtotal": "329,00",
+        "total": "329,00"
+      },
+      "contact": {
+        "cpf": "510.649.238-60",
+        "email": "brunno@comparejaseguros.com.br",
+        "lastUpdate": 1737131215907,
+        "name": "Brunno Very",
+        "phone": "(11) 95588-5000"
+      },
+      "created_at": 1737131214658,
+      "language": "pt-BR",
+      "lastUpdate": 1737131244844,
+      "platform": "iPhone",
+      "start_time": 1737131213709,
+      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2.1 Mobile/15E148 Safari/604.1"
+    }
+  }
+}

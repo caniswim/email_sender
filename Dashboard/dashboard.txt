@@ -1,0 +1,132 @@
+@Dashboard Vamos refazer todo o dashboard.
+
+1. Tipo de Gráfico Utilizado
+1.1. Gráfico de Pedidos Realizados e Pagos
+
+    Tipo de Gráfico: Linha
+    Descrição:
+        O gráfico de linha mostra a evolução dos valores de vendas e pedidos ao longo do tempo (eixo X: dias, eixo Y: valor ou número de pedidos).
+        Inclui um comparativo direto com o dia anterior no mesmo horario (indicado pela linha tracejada ou marcador inicial).
+        A linha curva suavizada proporciona clareza visual sobre a tendência.
+        Representação simples e eficaz para destacar o crescimento.
+
+
+1.2. Barras de Conversão do Checkout
+
+    Tipo de Gráfico: Barras horizontais
+    Descrição:
+        O progresso das etapas do checkout é mostrado em formato de barras horizontais preenchidas (percentual).
+        Cada barra representa uma etapa do funil de conversão (dados pessoais, entrega, pagamento, criação do pedido).
+        Cores distintas e gradação ajudam a diferenciar as etapas e destacar o progresso geral.
+        Excelente para entender onde estão as desistências no funil.
+
+1.3. Conversão por Método de Pagamento
+
+    Tipo de Exibição: Indicadores de percentual (texto numérico simples)
+    Descrição:
+        Exibe valores percentuais (ex.: 100% Pix, 0% boletos) em blocos separados.
+        Uso de ícones ou cores (ex.: verde para sucesso, cinza para inatividade) para tornar as informações claras.
+
+2. UI (Interface do Usuário)
+2.1. Design Visual
+
+    Layout Limpo:
+        Uso de espaço branco para evitar sobrecarga visual.
+        Separação clara por seções (pedidos realizados, carrinhos abandonados, ticket médio, conversão).
+
+Tipografia:
+
+    Texto grande e legível para valores principais (ex.: R$ 2.719,56).
+    Labels menores para descrever o contexto (ex.: "Pedidos realizados").
+
+Ícones:
+
+    Ícones simples para navegação e indicadores (ex.: gráfico, carrinho, tabela).
+    Uso de "live" (ponto vermelho) para indicar eventos em tempo real (ex.: "Clientes ao vivo na loja").
+
+Aqui está uma análise detalhada dos gráficos, design de UI (interface do usuário) e UX (experiência do usuário) do dashboard:
+1. Tipo de Gráfico Utilizado
+1.1. Gráfico de Pedidos Realizados e Pagos
+
+    Tipo de Gráfico: Linha
+    Descrição:
+        O gráfico de linha mostra a evolução dos valores de vendas e pedidos ao longo do tempo (eixo X: dias, eixo Y: valor ou número de pedidos).
+        Inclui um comparativo direto com o dia anterior (indicado pela linha tracejada ou marcador inicial).
+        A linha curva suavizada proporciona clareza visual sobre a tendência.
+        Representação simples e eficaz para destacar o crescimento.
+
+1.2. Barras de Conversão do Checkout
+
+    Tipo de Gráfico: Barras horizontais
+    Descrição:
+        O progresso das etapas do checkout é mostrado em formato de barras horizontais preenchidas (percentual).
+        Cada barra representa uma etapa do funil de conversão (dados pessoais, entrega, pagamento, criação do pedido).
+        Cores distintas e gradação ajudam a diferenciar as etapas e destacar o progresso geral.
+        Excelente para entender onde estão as desistências no funil.
+
+1.3. Conversão por Método de Pagamento
+
+    Tipo de Exibição: Indicadores de percentual (texto numérico simples)
+    Descrição:
+        Exibe valores percentuais (ex.: 100% Pix, 0% boletos) em blocos separados.
+        Uso de ícones ou cores (ex.: verde para sucesso, cinza para inatividade) para tornar as informações claras.
+
+2. UI (Interface do Usuário)
+2.1. Design Visual
+
+    Layout Limpo:
+        Uso de espaço branco para evitar sobrecarga visual.
+        Separação clara por seções (pedidos realizados, carrinhos abandonados, ticket médio, conversão).
+    Cores:
+        Paleta baseada em roxo (cor principal), tons de cinza e branco para contraste.
+        Verde para indicar crescimento ou métricas positivas.
+        Rosa para destacar áreas de conversão e progresso no funil.
+    Tipografia:
+        Texto grande e legível para valores principais (ex.: R$ 2.719,56).
+        Labels menores para descrever o contexto (ex.: "Pedidos realizados").
+    Ícones:
+        Ícones simples para navegação e indicadores (ex.: gráfico, carrinho, tabela).
+        Uso de "live" (ponto vermelho) para indicar eventos em tempo real (ex.: "Clientes ao vivo na loja").
+
+2.2. Navegação
+
+    Abas superiores:
+        Navegação intuitiva por períodos de tempo ("Hoje", "Ontem", "Últimos 7 dias").
+        Destaque visual da aba ativa (com borda e fundo preenchido).
+    Menu inferior:
+        Ícones para alternar entre seções principais do painel (home, métricas, pedidos, carrinho, menu).
+        Sempre visível e fixado na base para facilitar o acesso.
+
+3. UX (Experiência do Usuário)
+3.1. Funcionalidades Focadas no Usuário
+
+    Resumos de Métricas Importantes:
+        Métricas essenciais (R$ total de vendas, pedidos, ticket médio) destacadas logo no topo para fácil visualização.
+        Comparativos com porcentagens ajudam a avaliar rapidamente o desempenho.
+    Informações Detalhadas:
+        Gráficos interativos (ex.: ao passar o cursor, mais detalhes sobre cada ponto do gráfico podem aparecer).
+        Barra de progresso do checkout destaca onde estão as perdas (ex.: entrega ou pagamento).
+    Tempo Real:
+        Indicador de "Ao Vivo" para informações dinâmicas como "Clientes ao vivo na loja".
+    Personalização:
+        Alternância rápida entre períodos de tempo e filtros, permitindo ao usuário explorar dados de forma personalizada.
+
+3.2. Design Mobile-First
+
+    Responsividade:
+        O design foi claramente otimizado para dispositivos móveis, com:
+            Botões e áreas clicáveis grandes.
+            Tipografia legível em telas pequenas.
+    Navegação Simplificada:
+        Menus fixos e compactos no topo e base da tela.
+        Organização vertical para facilitar o scroll natural em celulares.
+
+3.3. Indicadores Visuais
+
+    Crescimento Positivo:
+        Uso de setas verdes e textos em verde para indicar métricas que cresceram.
+        Comparações com percentuais facilitam entender o contexto sem cálculos manuais.
+
+    Crescimento Negativo:
+        Uso de setas vermelhas e textos em vermelho para indicar métricas que diminuiram.
+        Comparações com percentuais facilitam entender o contexto sem cálculos manuais.
