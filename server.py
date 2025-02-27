@@ -7,6 +7,7 @@ from sender import EmailDispatcher
 from scheduler import EmailScheduler
 import pandas as pd
 from pathlib import Path
+import re
 
 class WebHandler(SimpleHTTPRequestHandler):
     # Atributos de classe
@@ -47,6 +48,9 @@ class WebHandler(SimpleHTTPRequestHandler):
                     self.end_headers()
                     print(f"Enviando listas: {json.dumps(response)}")
                     self.wfile.write(json.dumps(response).encode())
+                return
+            elif self.path.startswith('/unsubscribe'):
+                response = self.handle_unsubscribe_request(self.path)
                 return
             elif self.path.startswith('/api/preview_list/'):
                 response = self.handle_request(self.path)
@@ -122,6 +126,71 @@ class WebHandler(SimpleHTTPRequestHandler):
             
             if self.path == '/api/select_list':
                 response = self.handle_request(self.path, 'POST', data)
+            elif self.path == '/unsubscribe':
+                # Processa solicitação de descadastro via POST
+                if 'email' in data:
+                    email = data['email']
+                    
+                    # Verifica se o email é válido
+                    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            'success': False,
+                            'message': 'Email inválido'
+                        }).encode())
+                        return
+                    
+                    # Adiciona o email à blacklist
+                    import sqlite3
+                    conn = sqlite3.connect('email_blacklist.db')
+                    cursor = conn.cursor()
+                    
+                    # Verifica se o email já está na blacklist
+                    cursor.execute("SELECT email FROM invalid_emails WHERE email = ?", (email,))
+                    if cursor.fetchone():
+                        # Email já está na blacklist
+                        conn.close()
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            'success': True,
+                            'message': 'Email já estava descadastrado'
+                        }).encode())
+                        return
+                    
+                    # Adiciona o email à blacklist
+                    cursor.execute(
+                        "INSERT INTO invalid_emails (email, reason) VALUES (?, ?)",
+                        (email, "Descadastro voluntário via API")
+                    )
+                    conn.commit()
+                    conn.close()
+                    
+                    # Retorna uma resposta de sucesso
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'success': True,
+                        'message': 'Email descadastrado com sucesso'
+                    }).encode())
+                    return
+                else:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'success': False,
+                        'message': 'Email não fornecido'
+                    }).encode())
+                    return
             elif self.path == '/api/send_test':
                 try:
                     dispatcher = EmailDispatcher()
@@ -574,16 +643,323 @@ class WebHandler(SimpleHTTPRequestHandler):
                 return
 
     def send_error_response(self, message):
-        """Helper method to send error responses"""
-        self.send_response(200)  # Mantém 200 para que o frontend possa ler a mensagem
+        self.send_response(400)
         self.send_header('Content-type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        response = {
-            'status': 'error',
-            'message': message
-        }
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps({'status': 'error', 'message': message}).encode())
+
+    def handle_unsubscribe_request(self, path):
+        """Processa solicitações de descadastro de emails"""
+        try:
+            # Extrai o ID da URL
+            parsed_url = urlparse(path)
+            params = parse_qs(parsed_url.query)
+            
+            # Verifica se o email foi fornecido
+            if 'email' in params:
+                email = params['email'][0]
+                
+                # Verifica se o email é válido
+                if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                    self.send_response(400)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(self.get_unsubscribe_error_page("Email inválido").encode())
+                    return
+                
+                # Adiciona o email à blacklist
+                import sqlite3
+                conn = sqlite3.connect('email_blacklist.db')
+                cursor = conn.cursor()
+                
+                # Verifica se o email já está na blacklist
+                cursor.execute("SELECT email FROM invalid_emails WHERE email = ?", (email,))
+                if cursor.fetchone():
+                    # Email já está na blacklist
+                    conn.close()
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(self.get_unsubscribe_success_page(email).encode())
+                    return
+                
+                # Adiciona o email à blacklist
+                cursor.execute(
+                    "INSERT INTO invalid_emails (email, reason) VALUES (?, ?)",
+                    (email, "Descadastro voluntário")
+                )
+                conn.commit()
+                conn.close()
+                
+                # Retorna uma página de sucesso
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(self.get_unsubscribe_success_page(email).encode())
+                return
+            else:
+                # Se não houver email, exibe um formulário para o usuário inserir o email
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(self.get_unsubscribe_form().encode())
+                return
+                
+        except Exception as e:
+            print(f"Erro ao processar descadastro: {str(e)}")
+            self.send_response(500)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(self.get_unsubscribe_error_page(str(e)).encode())
+            return
+
+    def get_unsubscribe_form(self):
+        """Retorna o HTML do formulário de descadastro"""
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Descadastro de Lista de Emails</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                    color: #333;
+                    background-color: #f9f9f9;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h1 {
+                    color: #444;
+                    margin-bottom: 20px;
+                }
+                form {
+                    margin-top: 20px;
+                }
+                label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: bold;
+                }
+                input[type="email"] {
+                    width: 100%;
+                    padding: 10px;
+                    margin-bottom: 20px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    box-sizing: border-box;
+                }
+                button {
+                    background-color: #e74c3c;
+                    color: white;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 16px;
+                }
+                button:hover {
+                    background-color: #c0392b;
+                }
+                .footer {
+                    margin-top: 20px;
+                    font-size: 12px;
+                    color: #777;
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Descadastro de Lista de Emails</h1>
+                <p>Para se descadastrar da nossa lista de emails, por favor, insira seu endereço de email abaixo:</p>
+                
+                <form action="/unsubscribe" method="get">
+                    <label for="email">Seu Email:</label>
+                    <input type="email" id="email" name="email" required placeholder="seu@email.com">
+                    <button type="submit">Descadastrar</button>
+                </form>
+                
+                <div class="footer">
+                    <p>Se você tiver alguma dúvida, entre em contato conosco pelo email: contato@useblazee.com.br</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+    def get_unsubscribe_success_page(self, email):
+        """Retorna o HTML da página de sucesso de descadastro"""
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Descadastro Concluído</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                    color: #333;
+                    background-color: #f9f9f9;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    text-align: center;
+                }}
+                h1 {{
+                    color: #444;
+                    margin-bottom: 20px;
+                }}
+                .success-icon {{
+                    color: #2ecc71;
+                    font-size: 48px;
+                    margin-bottom: 20px;
+                }}
+                .email {{
+                    font-weight: bold;
+                    color: #555;
+                    background-color: #f5f5f5;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    font-size: 12px;
+                    color: #777;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="success-icon">✓</div>
+                <h1>Descadastro Concluído</h1>
+                <p>O email <span class="email">{email}</span> foi removido com sucesso da nossa lista de emails.</p>
+                <p>Você não receberá mais emails de marketing da nossa parte.</p>
+                
+                <div class="footer">
+                    <p>Se você tiver alguma dúvida, entre em contato conosco pelo email: contato@useblazee.com.br</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+    def get_unsubscribe_error_page(self, error_message):
+        """Retorna o HTML da página de erro de descadastro"""
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Erro no Descadastro</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                    color: #333;
+                    background-color: #f9f9f9;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    text-align: center;
+                }}
+                h1 {{
+                    color: #e74c3c;
+                    margin-bottom: 20px;
+                }}
+                .error-icon {{
+                    color: #e74c3c;
+                    font-size: 48px;
+                    margin-bottom: 20px;
+                }}
+                .error-message {{
+                    color: #555;
+                    background-color: #f5f5f5;
+                    padding: 10px;
+                    border-radius: 3px;
+                    margin-bottom: 20px;
+                }}
+                .button {{
+                    display: inline-block;
+                    background-color: #3498db;
+                    color: white;
+                    text-decoration: none;
+                    padding: 10px 15px;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                }}
+                .button:hover {{
+                    background-color: #2980b9;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    font-size: 12px;
+                    color: #777;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="error-icon">✗</div>
+                <h1>Erro no Descadastro</h1>
+                <p>Ocorreu um erro ao processar sua solicitação de descadastro:</p>
+                <div class="error-message">{error_message}</div>
+                <p>Por favor, tente novamente ou entre em contato com nosso suporte.</p>
+                <a href="/unsubscribe" class="button">Tentar Novamente</a>
+                
+                <div class="footer">
+                    <p>Se você tiver alguma dúvida, entre em contato conosco pelo email: contato@useblazee.com.br</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+    @staticmethod
+    def check_email_blacklist(email):
+        """Verifica se um email está na blacklist"""
+        try:
+            import sqlite3
+            conn = sqlite3.connect('email_blacklist.db')
+            cursor = conn.cursor()
+            
+            # Verifica se o email está na blacklist
+            cursor.execute("SELECT email FROM invalid_emails WHERE email = ?", (email,))
+            result = cursor.fetchone() is not None
+            conn.close()
+            
+            return result
+        except Exception as e:
+            print(f"Erro ao verificar blacklist: {str(e)}")
+            return False
 
 def run_server(port=8000):
     server_address = ('', port)

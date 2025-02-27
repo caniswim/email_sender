@@ -16,6 +16,7 @@ import uuid
 from email.utils import formatdate, make_msgid
 import os
 import json
+import sqlite3
 
 class EmailDispatcher:
     def __init__(self):
@@ -80,8 +81,13 @@ class EmailDispatcher:
         self.logger = logging.getLogger(__name__)
 
     def validar_email(self, email):
-        padrao = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return bool(re.match(padrao, email))
+        """Valida se um email está em formato correto"""
+        if not email:
+            return False
+        
+        # Validação básica de formato
+        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        return re.match(pattern, email) is not None
 
     def validar_arquivos(self, lista_emails_path, template_path):
         for arquivo in [lista_emails_path, template_path]:
@@ -89,13 +95,21 @@ class EmailDispatcher:
                 raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
 
     def carregar_template(self, template_path):
+        """Carrega o template HTML do email"""
         try:
-            with open(template_path, 'r', encoding='utf-8') as file:
-                template = file.read()
+            if not os.path.exists(template_path):
+                self.logger.error(f"Template não encontrado: {template_path}")
+                return None
+            
+            with open(template_path, 'r', encoding='utf-8') as f:
+                template = f.read()
+            
+            self.logger.info(f"Template carregado com sucesso: {template_path}")
             return template
+            
         except Exception as e:
             self.logger.error(f"Erro ao carregar template: {str(e)}")
-            raise
+            return None
 
     def extrair_primeiro_nome(self, nome_completo):
         """Extrai o primeiro nome de um nome completo."""
@@ -136,7 +150,7 @@ class EmailDispatcher:
         
         # Headers de conformidade para unsubscribe
         unsubscribe_id = str(uuid.uuid4())
-        unsubscribe_url = f'https://seusite.com/unsubscribe?id={unsubscribe_id}'
+        unsubscribe_url = f'https://email.blazee.com.br/unsubscribe?email={destinatario}'
         msg['List-Unsubscribe'] = f'<{unsubscribe_url}>, <mailto:unsubscribe@{self.hostname}?subject=unsubscribe>'
         msg['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
         
@@ -200,102 +214,220 @@ class EmailDispatcher:
         # Salva as estatísticas em um arquivo JSON
         self.salvar_estatisticas()
 
-    def salvar_estatisticas(self):
-        """Salva as estatísticas em um arquivo JSON"""
+    def salvar_estatisticas(self, stats):
+        """Salva as estatísticas de envio em um arquivo JSON"""
         try:
             with open('email_stats.json', 'w') as f:
-                json.dump(self.stats, f)
+                json.dump(stats, f)
         except Exception as e:
             self.logger.error(f"Erro ao salvar estatísticas: {str(e)}")
 
+    def dividir_em_lotes(self, df, tamanho_lote):
+        """Divide um DataFrame em lotes de tamanho especificado"""
+        for i in range(0, len(df), tamanho_lote):
+            yield df.iloc[i:i+tamanho_lote]
+
     def enviar_emails(self, lista_emails_path, template_path, horario_envio, assunto, remetente):
+        """Envia emails para uma lista de destinatários"""
         try:
-            # Reseta as estatísticas
-            self.stats = {
-                'total': 0,
+            # Carrega a lista de emails
+            df = self.carregar_lista_emails(lista_emails_path)
+            if df is None or len(df) == 0:
+                self.logger.error("Lista de emails vazia ou inválida")
+                return False
+            
+            # Carrega o template
+            template = self.carregar_template(template_path)
+            if not template:
+                self.logger.error(f"Falha ao carregar template: {template_path}")
+                return False
+            
+            # Verifica se o horário de envio já passou
+            horario = datetime.strptime(horario_envio, '%Y-%m-%d %H:%M:%S')
+            horario = self.timezone.localize(horario)
+            agora = datetime.now(self.timezone)
+            
+            if horario > agora:
+                self.logger.info(f"Agendamento para {horario_envio}, aguardando...")
+                return True
+            
+            # Inicializa estatísticas
+            stats = {
+                'total': len(df),
                 'enviados': 0,
                 'falhas': 0,
                 'invalidos': 0,
-                'status': 'iniciando',
+                'blacklist': 0,
+                'status': 'enviando',
                 'inicio': datetime.now().isoformat(),
                 'fim': None,
                 'erros': []
             }
+            self.salvar_estatisticas(stats)
             
-            # Verifica se os arquivos existem
-            if not os.path.exists(lista_emails_path):
-                raise FileNotFoundError(f"Lista de emails não encontrada: {lista_emails_path}")
-            
-            if not os.path.exists(template_path):
-                raise FileNotFoundError(f"Template não encontrado: {template_path}")
-            
-            # Carrega e valida a lista de emails
-            df = pd.read_csv(lista_emails_path)
-            self.stats['total'] = len(df)
-            
-            # Lista para armazenar emails inválidos
-            emails_invalidos = []
-            for _, row in df.iterrows():
-                if not self.validar_email(row['EMAIL']):
-                    emails_invalidos.append({
-                        'email': row['EMAIL'],
-                        'motivo': 'Email inválido'
-                    })
-                    self.atualizar_estatisticas('invalido')
-            
-            # Remove emails inválidos do DataFrame
-            df = df[~df['EMAIL'].isin([e['email'] for e in emails_invalidos])]
-            
-            # Carrega o template
-            template = self.carregar_template(template_path)
+            # Carrega a chave DKIM
+            self.carregar_dkim()
             
             # Conecta ao servidor SMTP
-            with smtplib.SMTP(host=self.smtp_config['host'], 
-                            port=self.smtp_config['port'], 
-                            timeout=self.smtp_config['timeout']) as server:
-                
-                self.stats['status'] = 'enviando'
-                self.salvar_estatisticas()
-                
-                # Processa em lotes
-                for i in range(0, len(df), self.batch_size):
-                    batch = df.iloc[i:i+self.batch_size]
+            with smtplib.SMTP(self.smtp_config['host'], self.smtp_config['port'], timeout=self.smtp_config['timeout']) as servidor:
+                # Processa em lotes para evitar sobrecarga
+                for i, chunk in enumerate(self.dividir_em_lotes(df, self.batch_size)):
+                    if i > 0:
+                        self.logger.info(f"Aguardando {self.batch_interval}s antes do próximo lote...")
+                        time.sleep(self.batch_interval)
                     
-                    for _, row in batch.iterrows():
+                    self.logger.info(f"Processando lote {i+1}/{(len(df) // self.batch_size) + 1} ({len(chunk)} emails)")
+                    
+                    for idx, row in chunk.iterrows():
                         try:
-                            msg = self.preparar_email(
-                                destinatario=row['EMAIL'],
-                                nome=row.get('NOME', ''),
-                                assunto=assunto,
-                                template=template,
-                                remetente=remetente
-                            )
+                            email = row['EMAIL'].strip()
+                            nome = row.get('NOME', '').strip()
                             
-                            self.enviar_email_com_retry(server, msg, row['EMAIL'])
-                            self.atualizar_estatisticas('enviado')
+                            # Verifica se o email é válido
+                            if not self.validar_email(email):
+                                self.logger.warning(f"Email inválido: {email}")
+                                stats['invalidos'] += 1
+                                continue
+                            
+                            # Verifica se o email está na blacklist
+                            conn = sqlite3.connect('email_blacklist.db')
+                            cursor = conn.cursor()
+                            cursor.execute("SELECT email FROM invalid_emails WHERE email = ?", (email,))
+                            if cursor.fetchone():
+                                conn.close()
+                                self.logger.info(f"Email na blacklist: {email}")
+                                stats['blacklist'] += 1
+                                continue
+                            conn.close()
+                            
+                            # Envia o email
+                            self.enviar_email(email, nome, assunto, template, remetente)
+                            stats['enviados'] += 1
+                            
+                            # Controle de taxa para evitar bloqueios anti-spam
+                            time.sleep(1 / self.rate_limit)
                             
                         except Exception as e:
-                            erro = f"Erro ao enviar email para {row['EMAIL']}: {str(e)}"
-                            print(erro)
-                            self.atualizar_estatisticas('falha', erro)
-                    
-                    # Pausa entre lotes
-                    time.sleep(self.batch_interval)
-                
-                self.stats['status'] = 'concluido'
-                self.stats['fim'] = datetime.now().isoformat()
-                self.salvar_estatisticas()
-                
-                return True
-                
+                            self.logger.error(f"Erro ao enviar para {email}: {str(e)}")
+                            stats['falhas'] += 1
+                            stats['erros'].append(f"{email}: {str(e)}")
+                        
+                        # Atualiza estatísticas a cada 10 emails
+                        if (stats['enviados'] + stats['falhas'] + stats['invalidos'] + stats['blacklist']) % 10 == 0:
+                            self.salvar_estatisticas(stats)
+            
+            # Finaliza estatísticas
+            stats['status'] = 'concluido'
+            stats['fim'] = datetime.now().isoformat()
+            self.salvar_estatisticas(stats)
+            
+            self.logger.info(f"Envio concluído: {stats['enviados']} enviados, {stats['falhas']} falhas, {stats['invalidos']} inválidos, {stats['blacklist']} na blacklist")
+            return True
+            
         except Exception as e:
-            erro = f"Erro crítico no envio em massa: {str(e)}"
-            print(erro)
-            self.stats['status'] = 'erro'
-            self.stats['fim'] = datetime.now().isoformat()
-            self.atualizar_estatisticas('falha', erro)
-            self.salvar_estatisticas()
+            self.logger.error(f"Erro no processo de envio: {str(e)}")
+            
+            # Atualiza estatísticas com erro
+            try:
+                with open('email_stats.json', 'r') as f:
+                    stats = json.load(f)
+                
+                stats['status'] = 'erro'
+                stats['fim'] = datetime.now().isoformat()
+                stats['erros'].append(str(e))
+                
+                with open('email_stats.json', 'w') as f:
+                    json.dump(stats, f)
+            except:
+                pass
+                
             return False
+
+    def enviar_email(self, email, nome, assunto, template, remetente):
+        """Envia um único email"""
+        try:
+            # Prepara o email
+            msg = self.preparar_email(
+                destinatario=email,
+                nome=nome,
+                assunto=assunto,
+                template=template,
+                remetente=remetente
+            )
+            
+            # Envia o email
+            with smtplib.SMTP(self.smtp_config['host'], self.smtp_config['port'], timeout=self.smtp_config['timeout']) as servidor:
+                servidor.send_message(msg)
+            
+            self.logger.info(f"Email enviado com sucesso para {email}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Erro ao enviar email para {email}: {str(e)}")
+            raise
+
+    def carregar_dkim(self):
+        """Carrega a chave DKIM para assinatura de emails"""
+        try:
+            if os.path.exists(self.dkim_config['private_key_path']):
+                with open(self.dkim_config['private_key_path'], 'rb') as f:
+                    self.dkim_key = f.read()
+                self.logger.info("Chave DKIM carregada com sucesso")
+            else:
+                self.logger.warning(f"Arquivo de chave DKIM não encontrado: {self.dkim_config['private_key_path']}")
+                self.dkim_key = None
+        except Exception as e:
+            self.logger.error(f"Erro ao carregar chave DKIM: {str(e)}")
+            self.dkim_key = None
+    
+    def carregar_lista_emails(self, lista_emails_path):
+        """Carrega e valida a lista de emails"""
+        try:
+            if not os.path.exists(lista_emails_path):
+                self.logger.error(f"Lista de emails não encontrada: {lista_emails_path}")
+                return None
+            
+            # Detecta o encoding do arquivo
+            encoding = 'utf-8'
+            try:
+                import chardet
+                with open(lista_emails_path, 'rb') as f:
+                    raw_data = f.read(1024)  # Lê apenas o início do arquivo
+                    detected = chardet.detect(raw_data)
+                    if detected['confidence'] > 0.7:
+                        encoding = detected['encoding']
+                        self.logger.info(f"Encoding detectado: {encoding}")
+            except ImportError:
+                self.logger.warning("Módulo chardet não encontrado, usando UTF-8")
+            except Exception as e:
+                self.logger.warning(f"Erro ao detectar encoding: {str(e)}, usando UTF-8")
+            
+            # Carrega o CSV
+            df = pd.read_csv(lista_emails_path, encoding=encoding)
+            
+            # Verifica se as colunas necessárias existem
+            required_columns = {'EMAIL'}
+            columns = {col.upper() for col in df.columns}
+            if not required_columns.issubset(columns):
+                missing = required_columns - columns
+                self.logger.error(f"Colunas obrigatórias ausentes: {missing}")
+                return None
+            
+            # Padroniza os nomes das colunas
+            df.columns = [col.upper() for col in df.columns]
+            
+            # Garante que a coluna NOME existe
+            if 'NOME' not in df.columns:
+                df['NOME'] = ''
+            
+            # Remove linhas com emails vazios
+            df = df[df['EMAIL'].notna() & (df['EMAIL'] != '')]
+            
+            self.logger.info(f"Lista de emails carregada com sucesso: {len(df)} emails")
+            return df
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao carregar lista de emails: {str(e)}")
+            return None
 
 if __name__ == "__main__":
     dispatcher = EmailDispatcher()
